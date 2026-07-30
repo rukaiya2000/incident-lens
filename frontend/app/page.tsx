@@ -12,6 +12,15 @@ export default function Home() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [compareSelected, setCompareSelected] = useState<Set<string>>(new Set());
+
+  function toggleCompare(id: string) {
+    setCompareSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
 
   async function refresh() {
     try {
@@ -121,28 +130,47 @@ export default function Home() {
             No investigations yet — create one above to get started.
           </p>
         ) : (
-          <ul className="flex flex-col gap-2">
-            {investigations.map((inv) => (
-              <li key={inv.id}>
+          <>
+            <div className="flex items-center justify-between text-xs text-zinc-500">
+              <span>Check 2 or more to ask a question across cases</span>
+              {compareSelected.size >= 2 && (
                 <Link
-                  href={`/investigations/${inv.id}`}
-                  className="group flex items-center justify-between gap-4 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-5 py-4 shadow-sm transition hover:border-[var(--accent)]/50 hover:shadow-md"
+                  href={`/compare?ids=${[...compareSelected].join(",")}`}
+                  className="rounded-lg bg-[var(--accent)] px-3 py-1.5 font-medium text-[var(--accent-foreground)] transition hover:opacity-90"
                 >
-                  <div className="flex min-w-0 flex-col">
-                    <span className="font-medium">{inv.name}</span>
-                    {inv.description && (
-                      <span className="truncate text-sm text-zinc-500 dark:text-zinc-400">
-                        {inv.description}
-                      </span>
-                    )}
-                  </div>
-                  <span className="shrink-0 text-zinc-400 transition group-hover:translate-x-0.5 group-hover:text-[var(--accent)]">
-                    →
-                  </span>
+                  Compare selected ({compareSelected.size})
                 </Link>
-              </li>
-            ))}
-          </ul>
+              )}
+            </div>
+            <ul className="flex flex-col gap-2">
+              {investigations.map((inv) => (
+                <li
+                  key={inv.id}
+                  className="group flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-5 py-4 shadow-sm transition hover:border-[var(--accent)]/50 hover:shadow-md"
+                >
+                  <input
+                    type="checkbox"
+                    checked={compareSelected.has(inv.id)}
+                    onChange={() => toggleCompare(inv.id)}
+                    className="h-4 w-4 shrink-0 accent-[var(--accent)]"
+                  />
+                  <Link href={`/investigations/${inv.id}`} className="flex flex-1 items-center justify-between gap-4">
+                    <div className="flex min-w-0 flex-col">
+                      <span className="font-medium">{inv.name}</span>
+                      {inv.description && (
+                        <span className="truncate text-sm text-zinc-500 dark:text-zinc-400">
+                          {inv.description}
+                        </span>
+                      )}
+                    </div>
+                    <span className="shrink-0 text-zinc-400 transition group-hover:translate-x-0.5 group-hover:text-[var(--accent)]">
+                      →
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
       </section>
     </div>

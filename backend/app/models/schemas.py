@@ -61,12 +61,18 @@ class AskRequest(BaseModel):
     video_ids: list[str]
 
 
+class CrossCaseAskRequest(BaseModel):
+    question: str
+    investigation_ids: list[str]
+
+
 class Evidence(BaseModel):
     video_id: str
     video_label: str
     start_sec: float
     end_sec: float
     snippet: str | None = None
+    investigation_name: str | None = None
 
 
 class AskResponse(BaseModel):

@@ -85,9 +85,9 @@ def get_video(video_id: str) -> dict | None:
         return dict(record["video"]) if record else None
 
 
-def run_read_query(cypher: str, investigation_id: str, video_ids: list[str]) -> list[dict]:
-    """Executes agent-authored Cypher, scoped to an investigation. Read-only: rejects
-    any statement containing a write keyword before it ever reaches the driver."""
+def run_read_query(cypher: str, investigation_ids: list[str], video_ids: list[str]) -> list[dict]:
+    """Executes agent-authored Cypher, scoped to one or more investigations. Read-only:
+    rejects any statement containing a write keyword before it ever reaches the driver."""
     if _WRITE_KEYWORDS.search(cypher):
         raise ValueError("Only read-only Cypher queries are allowed.")
 
@@ -95,7 +95,7 @@ def run_read_query(cypher: str, investigation_id: str, video_ids: list[str]) -> 
     with get_driver().session() as session:
         result = session.run(
             cypher,
-            investigation_id=investigation_id,
+            investigation_ids=investigation_ids,
             video_ids=video_ids,
         )
         rows = [dict(record) for record in result]

@@ -57,6 +57,7 @@ export interface Evidence {
   start_sec: number;
   end_sec: number;
   snippet: string | null;
+  investigation_name?: string | null;
 }
 
 export interface AskResponse {
@@ -165,8 +166,20 @@ export function ask(investigationId: string, question: string, videoIds: string[
   });
 }
 
+export function crossCaseAsk(investigationIds: string[], question: string) {
+  return request<AskResponse>(`/cross-case/ask`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question, investigation_ids: investigationIds }),
+  });
+}
+
 export function mediaUrl(filename: string) {
   return `${API_BASE_URL}/media/${filename}`;
+}
+
+export function clipDownloadUrl(videoId: string, startSec: number, endSec: number) {
+  return `${API_BASE_URL}/videos/${videoId}/clip?start_sec=${startSec}&end_sec=${endSec}`;
 }
 
 export interface ReportSummary {

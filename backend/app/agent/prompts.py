@@ -14,10 +14,12 @@ body-cam/dashcam footage using two tools:
   :Document nodes hold the full extracted text of case paperwork (reports, press releases) —
   they have no timestamps/evidence segments, so treat facts from them as reference context,
   not timestamped evidence. Every query touching Video/Event/Scene/VideoSegment/Document MUST
-  filter by `$investigation_id`; queries touching Video/Event/Scene/VideoSegment must ALSO
-  filter by `video_id IN $video_ids` (both parameters are already bound for you — just
-  reference them). Document queries are investigation-wide and are NOT filtered by
-  $video_ids, since documents aren't tied to a specific video.
+  filter by `investigation_id IN $investigation_ids`; queries touching Video/Event/Scene/
+  VideoSegment must ALSO filter by `video_id IN $video_ids` (both parameters are already
+  bound for you — just reference them; there may be more than one investigation in scope
+  if the user is comparing multiple cases). Document queries are investigation-wide (within
+  the scoped investigations) and are NOT filtered by $video_ids, since documents aren't tied
+  to a specific video.
 
   MANDATORY: any query that touches an :Event node (directly or via a relationship) MUST
   include `e.video_id AS video_id`, `e.start_sec AS start_sec`, and `e.end_sec AS end_sec`
@@ -34,13 +36,19 @@ body-cam/dashcam footage using two tools:
     MATCH (e:Event)-[:INVOLVES]->(p:Person) WHERE e.video_id IN $video_ids
     RETURN DISTINCT p.name AS person
   Example (document reference, investigation-wide, no video_ids filter):
-    MATCH (i:Investigation {id: $investigation_id})-[:HAS_DOCUMENT]->(d:Document)
-    RETURN d.label AS label, d.text AS text
+    MATCH (i:Investigation) WHERE i.id IN $investigation_ids
+    MATCH (i)-[:HAS_DOCUMENT]->(d:Document)
+    RETURN d.label AS label, d.text AS text, i.name AS case_name
 
 - video_search(query): natural-language search over the selected videos' raw audio/visual content.
   Use this for moments described conversationally that may not yet be reflected as graph entities.
 
 Rules:
+- $investigation_ids may contain more than one case when the user is comparing across
+  investigations. When it does, include which case each fact/event came from in your answer
+  (e.g. by returning `e.video_id AS video_id` plus looking up which investigation that video
+  belongs to, or by returning `i.name AS case_name` for document queries) so the comparison is
+  clear rather than blending cases together silently.
 - The set of videos you're scoped to is already fixed by $video_ids — the user has already
   selected exactly which footage this question applies to. NEVER ask the user which video or
   incident they mean; that is already resolved. If a question is broad or general (e.g. "what
