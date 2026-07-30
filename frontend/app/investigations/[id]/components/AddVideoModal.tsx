@@ -1,25 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { addVideo } from "../../../lib/api";
+import { addVideo, addVideoFromUrl, CaseVideoPreview, previewCaseSource, Video } from "../../../lib/api";
 
-export default function AddVideoModal({
+function formatDuration(seconds: number | null): string {
+  if (seconds == null) return "—";
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+function UploadTab({
   investigationId,
-  isOpen,
-  onClose,
   onAdded,
+  onClose,
 }: {
   investigationId: string;
-  isOpen: boolean;
-  onClose: () => void;
   onAdded: () => void;
+  onClose: () => void;
 }) {
   const [label, setLabel] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  if (!isOpen) return null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -40,42 +43,273 @@ export default function AddVideoModal({
   }
 
   return (
-    <div className="fixed inset-0 z-10 flex items-center justify-center bg-slate-950/45 backdrop-blur-sm p-4">
-      <form
-        onSubmit={handleSubmit}
-        className="flex w-full max-w-sm flex-col gap-3 rounded-3xl border border-white/70 bg-white/95 p-6 shadow-2xl dark:border-white/5 dark:bg-zinc-900"
-      >
-        <h3 className="text-sm font-medium">Add footage</h3>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-zinc-500">Label</label>
         <input
-          className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:border-zinc-700 dark:bg-zinc-800"
-          placeholder="Label (e.g. Bodycam A)"
+          autoFocus
+          className="rounded-2xl border border-slate-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+          placeholder="e.g. Bodycam A"
           value={label}
           onChange={(e) => setLabel(e.target.value)}
         />
-        <input
-          type="file"
-          accept="video/*"
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          className="text-sm"
-        />
-        {error && <p className="text-sm text-red-600">{error}</p>}
-        <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded px-3 py-2 text-sm text-zinc-600 dark:text-zinc-400"
-          >
-            Cancel
-          </button>
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-zinc-500">Video file</label>
+        <label className="flex cursor-pointer flex-col items-center gap-1 rounded-lg border border-dashed border-[var(--border)] px-3 py-5 text-center text-sm text-zinc-500 transition hover:border-[var(--accent)]/50">
+          {file ? (
+            <span className="truncate font-medium text-[var(--foreground)]">{file.name}</span>
+          ) : (
+            <span>Click to choose a video</span>
+          )}
+          <input
+            type="file"
+            accept="video/*"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="hidden"
+          />
+        </label>
+      </div>
+      {error && <p className="text-sm text-red-500">{error}</p>}
+      <div className="flex justify-end gap-2 pt-1">
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-lg px-3 py-2 text-sm text-zinc-500 transition hover:text-zinc-800 dark:hover:text-zinc-200"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={uploading || !file || !label.trim()}
+          className="flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] transition disabled:opacity-50"
+        >
+          {uploading && (
+            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          )}
+          {uploading ? "Uploading…" : "Add"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
+function CaseLinkTab({
+  investigationId,
+  onAdded,
+  existingSourceUrls,
+}: {
+  investigationId: string;
+  onAdded: () => void;
+  existingSourceUrls: Set<string>;
+}) {
+  const [url, setUrl] = useState("");
+  const [fetching, setFetching] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [referer, setReferer] = useState<string | undefined>(undefined);
+  const [videos, setVideos] = useState<CaseVideoPreview[] | null>(null);
+  const [labels, setLabels] = useState<string[]>([]);
+  const [addingIndex, setAddingIndex] = useState<number | null>(null);
+  const [addedIndices, setAddedIndices] = useState<Set<number>>(new Set());
+
+  async function handleFetch(e: React.FormEvent) {
+    e.preventDefault();
+    if (!url.trim()) return;
+    setFetching(true);
+    setError(null);
+    setVideos(null);
+    try {
+      const result = await previewCaseSource(investigationId, url.trim());
+      setVideos(result.videos);
+      setLabels(result.videos.map((v) => v.label));
+      setReferer(result.referer);
+      setAddedIndices(new Set());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not read that page");
+    } finally {
+      setFetching(false);
+    }
+  }
+
+  async function handleAdd(index: number) {
+    if (!videos) return;
+    setAddingIndex(index);
+    setError(null);
+    try {
+      await addVideoFromUrl(investigationId, videos[index].source_url, labels[index].trim(), referer);
+      setAddedIndices((prev) => new Set(prev).add(index));
+      onAdded();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add video");
+    } finally {
+      setAddingIndex(null);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <form onSubmit={handleFetch} className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-zinc-500">Case / evidence page URL</label>
+        <div className="flex gap-2">
+          <input
+            className="flex-1 rounded-2xl border border-slate-200 dark:border-zinc-700 bg-transparent px-3 py-2 text-sm outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20"
+            placeholder="https://www.chicagocopa.org/case/..."
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+          />
           <button
             type="submit"
-            disabled={uploading || !file || !label.trim()}
-            className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-700 px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-500/25 disabled:opacity-50"
+            disabled={fetching || !url.trim()}
+            className="flex shrink-0 items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] transition disabled:opacity-50"
           >
-            {uploading ? "Uploading..." : "Add"}
+            {fetching && (
+              <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            )}
+            {fetching ? "Fetching…" : "Fetch videos"}
           </button>
         </div>
+        <p className="text-xs text-zinc-500">
+          Pulls every embedded video on the page with its duration, so you can pick which ones
+          to ingest.
+        </p>
       </form>
+
+      {error && <p className="text-sm text-red-500">{error}</p>}
+
+      {addedIndices.size > 0 && (
+        <p className="rounded-lg border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-3 py-2 text-xs text-[var(--accent)]">
+          Ingestion started for {addedIndices.size} video{addedIndices.size === 1 ? "" : "s"} —
+          you can keep adding more, or close this and check progress in the footage list.
+        </p>
+      )}
+
+      {videos && (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-zinc-500">
+            {videos.length} video{videos.length === 1 ? "" : "s"} found
+          </p>
+          <div className="flex max-h-80 flex-col gap-2 overflow-y-auto pr-1">
+            {videos.map((video, i) => {
+              const added = addedIndices.has(i) || existingSourceUrls.has(video.source_url);
+              return (
+                <div
+                  key={video.source_url}
+                  className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-zinc-700 p-2.5"
+                >
+                  {video.thumbnail_url ? (
+                    <img
+                      src={video.thumbnail_url}
+                      alt=""
+                      className="h-10 w-16 shrink-0 rounded object-cover"
+                    />
+                  ) : (
+                    <div className="h-10 w-16 shrink-0 rounded bg-zinc-200 dark:bg-zinc-800" />
+                  )}
+                  <input
+                    value={labels[i]}
+                    onChange={(e) =>
+                      setLabels((prev) => prev.map((l, idx) => (idx === i ? e.target.value : l)))
+                    }
+                    className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1.5 py-1 text-sm outline-none transition hover:border-[var(--border)] focus:border-[var(--accent)]"
+                  />
+                  <span className="shrink-0 font-mono text-xs text-zinc-500">
+                    {formatDuration(video.duration_sec)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleAdd(i)}
+                    disabled={added || addingIndex === i}
+                    className="flex shrink-0 items-center gap-1.5 rounded-2xl border border-slate-200 dark:border-zinc-700 px-3 py-1.5 text-xs font-medium transition hover:border-[var(--accent)]/50 disabled:opacity-60"
+                  >
+                    {addingIndex === i && (
+                      <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    )}
+                    {added ? "Added ✓" : addingIndex === i ? "Adding…" : "Add"}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function AddVideoModal({
+  investigationId,
+  isOpen,
+  onClose,
+  onAdded,
+  existingVideos,
+}: {
+  investigationId: string;
+  isOpen: boolean;
+  onClose: () => void;
+  onAdded: () => void;
+  existingVideos: Video[];
+}) {
+  const [tab, setTab] = useState<"upload" | "link">("upload");
+
+  if (!isOpen) return null;
+
+  const existingSourceUrls = new Set(
+    existingVideos.map((v) => v.source_url).filter((url): url is string => !!url)
+  );
+
+  return (
+    <div
+      className="fixed inset-0 z-30 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex w-full max-w-lg flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-xl"
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">Add evidence</h3>
+          <button
+            onClick={onClose}
+            className="text-zinc-400 transition hover:text-[var(--foreground)]"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="flex gap-1 rounded-lg bg-zinc-100 p-1 text-sm dark:bg-zinc-900">
+          <button
+            onClick={() => setTab("upload")}
+            className={`flex-1 rounded-md px-3 py-1.5 font-medium transition ${
+              tab === "upload"
+                ? "bg-[var(--surface)] shadow-sm"
+                : "text-zinc-500 hover:text-[var(--foreground)]"
+            }`}
+          >
+            Upload file
+          </button>
+          <button
+            onClick={() => setTab("link")}
+            className={`flex-1 rounded-md px-3 py-1.5 font-medium transition ${
+              tab === "link"
+                ? "bg-[var(--surface)] shadow-sm"
+                : "text-zinc-500 hover:text-[var(--foreground)]"
+            }`}
+          >
+            From case link
+          </button>
+        </div>
+
+        {tab === "upload" ? (
+          <UploadTab investigationId={investigationId} onAdded={onAdded} onClose={onClose} />
+        ) : (
+          <CaseLinkTab
+            investigationId={investigationId}
+            onAdded={onAdded}
+            existingSourceUrls={existingSourceUrls}
+          />
+        )}
+      </div>
     </div>
   );
 }

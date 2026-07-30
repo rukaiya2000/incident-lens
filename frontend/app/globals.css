@@ -1,6 +1,13 @@
 @import "tailwindcss";
 
-:root { --background: #f5f7fb; --foreground: #172033; }
+:root {
+  --background: #f5f7fb;
+  --surface: #ffffff;
+  --foreground: #172033;
+  --border: #e4e8f0;
+  --accent: #4f46e5;
+  --accent-foreground: #ffffff;
+}
 
 @theme inline {
   --color-background: var(--background);
@@ -10,8 +17,10 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root { --background: #0b1020; --foreground: #f7f8fc; }
+  :root { --background: #0b1020; --surface: #151a2a; --foreground: #f7f8fc; --border: #2a3145; --accent: #818cf8; --accent-foreground: #0b1020; }
 }
+
+* { border-color: var(--border); }
 
 body {
   min-height: 100vh;
@@ -20,16 +29,14 @@ body {
     radial-gradient(circle at 95% 0%, rgb(224 231 255 / 0.75), transparent 31rem),
     var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
-  body {
-    background:
-      radial-gradient(circle at 5% -10%, rgb(30 58 138 / 0.3), transparent 28rem),
-      radial-gradient(circle at 95% 0%, rgb(76 29 149 / 0.25), transparent 31rem),
-      var(--background);
-  }
+  body { background: radial-gradient(circle at 5% -10%, rgb(30 58 138 / 0.3), transparent 28rem), radial-gradient(circle at 95% 0%, rgb(76 29 149 / 0.25), transparent 31rem), var(--background); }
 }
 
-::selection { background: #bfdbfe; color: #172033; }
+::selection { background: var(--accent); color: var(--accent-foreground); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 999px; }

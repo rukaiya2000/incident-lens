@@ -1,21 +1,85 @@
 "use client";
 
-import { Video } from "../../../lib/api";
+import { Video, VideoStatus } from "../../../lib/api";
 
-const STATUS_LABEL: Record<Video["status"], string> = { uploaded: "Queued", indexing: "Indexing", indexed: "Extracting", extracting: "Extracting", partial: "Needs attention", ready: "Ready", failed: "Failed" };
+const STATUS_META: Record<VideoStatus, { label: string; dot: string; pulse?: boolean }> = {
+  downloading: { label: "Downloading…", dot: "bg-sky-500", pulse: true },
+  uploaded: { label: "Uploaded", dot: "bg-zinc-400", pulse: true },
+  indexing: { label: "Indexing…", dot: "bg-amber-500", pulse: true },
+  indexed: { label: "Indexed", dot: "bg-amber-500", pulse: true },
+  extracting: { label: "Extracting…", dot: "bg-amber-500", pulse: true },
+  partial: { label: "Partial", dot: "bg-orange-500" },
+  ready: { label: "Ready", dot: "bg-emerald-500" },
+  failed: { label: "Failed", dot: "bg-red-500" },
+};
 
-function statusClass(status: Video["status"]) {
-  return status === "ready" ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300" : status === "partial" || status === "failed" ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300" : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300";
-}
+export default function VideoList({
+  videos,
+  selected,
+  onToggle,
+}: {
+  videos: Video[];
+  selected: Set<string>;
+  onToggle: (videoId: string) => void;
+}) {
+  if (videos.length === 0) {
+    return (
+      <p className="rounded-xl border border-dashed border-[var(--border)] px-4 py-6 text-center text-sm text-zinc-500">
+        No footage added yet.
+      </p>
+    );
+  }
 
-export default function VideoList({ videos, selected, onToggle }: { videos: Video[]; selected: Set<string>; onToggle: (videoId: string) => void }) {
-  if (videos.length === 0) return <div className="rounded-2xl border border-dashed border-slate-300 bg-white/50 p-5 text-sm text-slate-500 dark:border-zinc-700 dark:bg-zinc-950/40 dark:text-zinc-400">No footage yet. Add a video to start the analysis.</div>;
-  return <ul className="space-y-2">{videos.map((video) => {
-    const ready = video.status === "ready";
-    const checked = selected.has(video.id);
-    return <li key={video.id}><label className={`flex cursor-pointer gap-3 rounded-2xl border p-3.5 shadow-sm transition ${checked ? "border-blue-300 bg-blue-50/80 shadow-blue-500/10 dark:border-blue-800 dark:bg-blue-950/30" : "border-white/80 bg-white/70 hover:-translate-y-0.5 hover:bg-white hover:shadow-md dark:border-white/5 dark:bg-zinc-950/65"} ${!ready ? "cursor-not-allowed opacity-70" : ""}`}>
-      <input type="checkbox" className="mt-1 size-4 accent-blue-700" checked={checked} disabled={!ready} onChange={() => onToggle(video.id)} />
-      <span className="min-w-0 flex-1"><span className="flex items-start justify-between gap-2"><span className="truncate text-sm font-medium">{video.label}</span><span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${statusClass(video.status)}`}>{STATUS_LABEL[video.status]}</span></span><span className="mt-1 block text-xs text-slate-500 dark:text-zinc-400">{ready ? "Included in evidence searches" : video.error ?? "Analysis is not ready yet"}</span></span>
-    </label></li>;
-  })}</ul>;
+  return (
+    <ul className="flex flex-col gap-2">
+      {videos.map((video) => {
+        const meta = STATUS_META[video.status];
+        const isSelected = selected.has(video.id);
+        const disabled = video.status !== "ready";
+        return (
+          <li key={video.id}>
+            <label
+              className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 transition ${
+                disabled
+                  ? "cursor-not-allowed border-[var(--border)] opacity-70"
+                  : isSelected
+                    ? "cursor-pointer border-[var(--accent)] bg-[var(--accent)]/5"
+                    : "cursor-pointer border-[var(--border)] hover:border-[var(--accent)]/40"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={isSelected}
+                disabled={disabled}
+                onChange={() => onToggle(video.id)}
+                className="h-4 w-4 accent-[var(--accent)]"
+              />
+              <div className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-sm font-medium">{video.label}</span>
+                {video.status === "partial" && video.error && (
+                  <span className="truncate text-xs text-amber-600 dark:text-amber-500">
+                    {video.error}
+                  </span>
+                )}
+                {video.status === "failed" && video.error && (
+                  <span className="truncate text-xs text-red-500">{video.error}</span>
+                )}
+              </div>
+              <span className="flex shrink-0 items-center gap-1.5 text-xs text-zinc-500">
+                <span className="relative flex h-2 w-2">
+                  {meta.pulse && (
+                    <span
+                      className={`absolute inline-flex h-full w-full animate-ping rounded-full ${meta.dot} opacity-60`}
+                    />
+                  )}
+                  <span className={`relative inline-flex h-2 w-2 rounded-full ${meta.dot}`} />
+                </span>
+                {meta.label}
+              </span>
+            </label>
+          </li>
+        );
+      })}
+    </ul>
+  );
 }

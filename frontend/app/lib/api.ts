@@ -1,6 +1,7 @@
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 export type VideoStatus =
+  | "downloading"
   | "uploaded"
   | "indexing"
   | "indexed"
@@ -16,6 +17,7 @@ export interface Video {
   status: VideoStatus;
   tl_video_id: string | null;
   error?: string | null;
+  source_url?: string | null;
 }
 
 export interface Investigation {
@@ -90,6 +92,42 @@ export async function addVideo(investigationId: string, file: File, label: strin
 export function getVideoStatus(investigationId: string, videoId: string) {
   return request<VideoStatusResponse>(
     `/investigations/${investigationId}/videos/${videoId}/status`
+  );
+}
+
+export interface CaseVideoPreview {
+  label: string;
+  source_url: string;
+  duration_sec: number | null;
+  thumbnail_url: string | null;
+}
+
+export interface CaseSourceResponse {
+  referer: string;
+  videos: CaseVideoPreview[];
+}
+
+export function previewCaseSource(investigationId: string, url: string) {
+  return request<CaseSourceResponse>(`/investigations/${investigationId}/videos/case-source/preview`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+}
+
+export function addVideoFromUrl(
+  investigationId: string,
+  sourceUrl: string,
+  label: string,
+  referer?: string
+) {
+  return request<{ video_id: string; status: VideoStatus }>(
+    `/investigations/${investigationId}/videos/from-url`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source_url: sourceUrl, label, referer }),
+    }
   );
 }
 

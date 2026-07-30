@@ -17,7 +17,7 @@ async def lifespan(app: FastAPI):
     close_driver()
 
 
-app = FastAPI(title="IncidentGraph API", lifespan=lifespan)
+app = FastAPI(title="Incident Lens API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
