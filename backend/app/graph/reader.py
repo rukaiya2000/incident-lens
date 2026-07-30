@@ -22,7 +22,7 @@ def get_investigation(investigation_id: str) -> dict | None:
             OPTIONAL MATCH (i)-[:HAS_VIDEO]->(v:Video)
             RETURN i.id AS id, i.name AS name, i.description AS description,
                    i.tl_index_id AS tl_index_id,
-                   collect(v {.id, .label, .filename, .status, .tl_video_id, .error}) AS videos
+                   collect(v {.id, .label, .filename, .status, .tl_video_id, .error, .source_url}) AS videos
             """,
             id=investigation_id,
         )
@@ -32,6 +32,20 @@ def get_investigation(investigation_id: str) -> dict | None:
         data = dict(record)
         data["videos"] = [v for v in data["videos"] if v.get("id") is not None]
         return data
+
+
+def find_video_by_source_url(investigation_id: str, source_url: str) -> dict | None:
+    with get_driver().session() as session:
+        result = session.run(
+            """
+            MATCH (i:Investigation {id: $investigation_id})-[:HAS_VIDEO]->(v:Video {source_url: $source_url})
+            RETURN v {.id, .label, .status} AS video
+            """,
+            investigation_id=investigation_id,
+            source_url=source_url,
+        )
+        record = result.single()
+        return dict(record["video"]) if record else None
 
 
 def get_video(video_id: str) -> dict | None:

@@ -24,7 +24,12 @@ def set_investigation_index_id(investigation_id: str, tl_index_id: str) -> None:
 
 
 def create_video(
-    video_id: str, investigation_id: str, label: str, filename: str, initial_status: str = "uploaded"
+    video_id: str,
+    investigation_id: str,
+    label: str,
+    filename: str,
+    initial_status: str = "uploaded",
+    source_url: str | None = None,
 ) -> None:
     with get_driver().session() as session:
         session.run(
@@ -32,7 +37,8 @@ def create_video(
             MATCH (i:Investigation {id: $investigation_id})
             CREATE (v:Video {
                 id: $video_id, investigation_id: $investigation_id,
-                label: $label, filename: $filename, status: $initial_status, tl_video_id: null
+                label: $label, filename: $filename, status: $initial_status, tl_video_id: null,
+                source_url: $source_url
             })
             CREATE (i)-[:HAS_VIDEO]->(v)
             """,
@@ -41,6 +47,7 @@ def create_video(
             label=label,
             filename=filename,
             initial_status=initial_status,
+            source_url=source_url,
         )
 
 

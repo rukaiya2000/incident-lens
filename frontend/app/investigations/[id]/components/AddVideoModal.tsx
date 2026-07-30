@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { addVideo, addVideoFromUrl, CaseVideoPreview, previewCaseSource } from "../../../lib/api";
+import { addVideo, addVideoFromUrl, CaseVideoPreview, previewCaseSource, Video } from "../../../lib/api";
 
 function formatDuration(seconds: number | null): string {
   if (seconds == null) return "—";
@@ -94,7 +94,15 @@ function UploadTab({
   );
 }
 
-function CaseLinkTab({ investigationId, onAdded }: { investigationId: string; onAdded: () => void }) {
+function CaseLinkTab({
+  investigationId,
+  onAdded,
+  existingSourceUrls,
+}: {
+  investigationId: string;
+  onAdded: () => void;
+  existingSourceUrls: Set<string>;
+}) {
   const [url, setUrl] = useState("");
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -157,7 +165,7 @@ function CaseLinkTab({ investigationId, onAdded }: { investigationId: string; on
             {fetching && (
               <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
             )}
-            {fetching ? "Reading…" : "Fetch videos"}
+            {fetching ? "Fetching…" : "Fetch videos"}
           </button>
         </div>
         <p className="text-xs text-zinc-500">
@@ -168,6 +176,13 @@ function CaseLinkTab({ investigationId, onAdded }: { investigationId: string; on
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
+      {addedIndices.size > 0 && (
+        <p className="rounded-lg border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-3 py-2 text-xs text-[var(--accent)]">
+          Ingestion started for {addedIndices.size} video{addedIndices.size === 1 ? "" : "s"} —
+          you can keep adding more, or close this and check progress in the footage list.
+        </p>
+      )}
+
       {videos && (
         <div className="flex flex-col gap-2">
           <p className="text-xs text-zinc-500">
@@ -175,7 +190,7 @@ function CaseLinkTab({ investigationId, onAdded }: { investigationId: string; on
           </p>
           <div className="flex max-h-80 flex-col gap-2 overflow-y-auto pr-1">
             {videos.map((video, i) => {
-              const added = addedIndices.has(i);
+              const added = addedIndices.has(i) || existingSourceUrls.has(video.source_url);
               return (
                 <div
                   key={video.source_url}
@@ -226,15 +241,21 @@ export default function AddVideoModal({
   isOpen,
   onClose,
   onAdded,
+  existingVideos,
 }: {
   investigationId: string;
   isOpen: boolean;
   onClose: () => void;
   onAdded: () => void;
+  existingVideos: Video[];
 }) {
   const [tab, setTab] = useState<"upload" | "link">("upload");
 
   if (!isOpen) return null;
+
+  const existingSourceUrls = new Set(
+    existingVideos.map((v) => v.source_url).filter((url): url is string => !!url)
+  );
 
   return (
     <div
@@ -282,7 +303,11 @@ export default function AddVideoModal({
         {tab === "upload" ? (
           <UploadTab investigationId={investigationId} onAdded={onAdded} onClose={onClose} />
         ) : (
-          <CaseLinkTab investigationId={investigationId} onAdded={onAdded} />
+          <CaseLinkTab
+            investigationId={investigationId}
+            onAdded={onAdded}
+            existingSourceUrls={existingSourceUrls}
+          />
         )}
       </div>
     </div>

@@ -133,6 +133,7 @@ export default function InvestigationPage({ params }: { params: Promise<{ id: st
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onAdded={refresh}
+        existingVideos={investigation.videos}
       />
     </div>
   );

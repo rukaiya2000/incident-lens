@@ -77,12 +77,26 @@ def add_video_from_url(
     if investigation is None:
         raise HTTPException(status_code=404, detail="Investigation not found")
 
+    existing = reader.find_video_by_source_url(investigation_id, payload.source_url)
+    if existing is not None:
+        raise HTTPException(
+            status_code=409,
+            detail=f"This video was already added as '{existing['label']}' ({existing['status']}).",
+        )
+
     settings = get_settings()
     video_id = str(uuid.uuid4())
     filename = f"{video_id}.mp4"
     dest_path: Path = settings.media_root_path / filename
 
-    writer.create_video(video_id, investigation_id, payload.label, filename, initial_status="downloading")
+    writer.create_video(
+        video_id,
+        investigation_id,
+        payload.label,
+        filename,
+        initial_status="downloading",
+        source_url=payload.source_url,
+    )
 
     tl_index_id = get_or_create_index(
         investigation_id, investigation.get("tl_index_id"), settings.twelvelabs_index_name_prefix

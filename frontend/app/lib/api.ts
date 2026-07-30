@@ -17,6 +17,7 @@ export interface Video {
   status: VideoStatus;
   tl_video_id: string | null;
   error?: string | null;
+  source_url?: string | null;
 }
 
 export interface Investigation {
