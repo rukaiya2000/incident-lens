@@ -40,14 +40,14 @@ export default function AddVideoModal({
   }
 
   return (
-    <div className="fixed inset-0 z-10 flex items-center justify-center bg-black/40 p-4">
+    <div className="fixed inset-0 z-10 flex items-center justify-center bg-slate-950/45 backdrop-blur-sm p-4">
       <form
         onSubmit={handleSubmit}
-        className="flex w-full max-w-sm flex-col gap-3 rounded-lg bg-white p-4 dark:bg-zinc-900"
+        className="flex w-full max-w-sm flex-col gap-3 rounded-3xl border border-white/70 bg-white/95 p-6 shadow-2xl dark:border-white/5 dark:bg-zinc-900"
       >
         <h3 className="text-sm font-medium">Add footage</h3>
         <input
-          className="rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
+          className="rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 dark:border-zinc-700 dark:bg-zinc-800"
           placeholder="Label (e.g. Bodycam A)"
           value={label}
           onChange={(e) => setLabel(e.target.value)}
@@ -70,7 +70,7 @@ export default function AddVideoModal({
           <button
             type="submit"
             disabled={uploading || !file || !label.trim()}
-            className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+            className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-700 px-5 py-2.5 text-sm font-medium text-white shadow-lg shadow-blue-500/25 disabled:opacity-50"
           >
             {uploading ? "Uploading..." : "Add"}
           </button>
