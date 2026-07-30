@@ -26,3 +26,4 @@ frontend/.env.local
 .DS_Store
 
 *.logs
+*.log

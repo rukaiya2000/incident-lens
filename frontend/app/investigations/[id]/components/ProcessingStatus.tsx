@@ -2,46 +2,11 @@
 
 import { Video, VideoStatus } from "../../../lib/api";
 
-const STEP_LABELS = ["uploaded", "indexed", "entities", "ready"] as const;
-
-const STATUS_STEPS: Record<VideoStatus, Record<(typeof STEP_LABELS)[number], boolean>> = {
-  uploaded: { uploaded: true, indexed: false, entities: false, ready: false },
-  indexing: { uploaded: true, indexed: false, entities: false, ready: false },
-  indexed: { uploaded: true, indexed: true, entities: false, ready: false },
-  extracting: { uploaded: true, indexed: true, entities: false, ready: false },
-  ready: { uploaded: true, indexed: true, entities: true, ready: true },
-  partial: { uploaded: true, indexed: true, entities: false, ready: false },
-  failed: { uploaded: true, indexed: false, entities: false, ready: false },
-};
+const STEPS = ["Uploaded", "Indexed", "Events extracted", "Ready"];
+const STATUS_STEPS: Record<VideoStatus, number> = { uploaded: 1, indexing: 1, indexed: 2, extracting: 2, ready: 4, partial: 2, failed: 1 };
 
 export default function ProcessingStatus({ videos }: { videos: Video[] }) {
-  const processing = videos.filter((v) => v.status !== "ready");
+  const processing = videos.filter((video) => video.status !== "ready");
   if (processing.length === 0) return null;
-
-  return (
-    <div className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
-      <h3 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Processing</h3>
-      {processing.map((video) => {
-        const steps = STATUS_STEPS[video.status];
-        return (
-          <div key={video.id} className="flex flex-col gap-1">
-            <span className="text-sm font-medium">{video.label}</span>
-            <div className="flex gap-3 text-xs text-zinc-500">
-              {STEP_LABELS.map((step) => (
-                <span key={step}>
-                  {steps[step] ? "✓" : "○"} {step}
-                </span>
-              ))}
-            </div>
-            {video.status === "partial" && video.error && (
-              <span className="text-xs text-amber-600">{video.error}</span>
-            )}
-            {video.status === "failed" && video.error && (
-              <span className="text-xs text-red-600">{video.error}</span>
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
+  return <section className="rounded-xl border border-slate-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"><div className="flex items-center justify-between"><h3 className="text-sm font-semibold">Analysis queue</h3><span className="text-xs text-slate-500 dark:text-zinc-400">{processing.length} active</span></div><div className="mt-4 space-y-4">{processing.map((video) => { const complete = STATUS_STEPS[video.status]; return <div key={video.id}><div className="flex justify-between gap-3 text-sm"><span className="truncate font-medium">{video.label}</span><span className="shrink-0 text-slate-500 dark:text-zinc-400">{video.status}</span></div><div className="mt-2 grid grid-cols-4 gap-1">{STEPS.map((step, index) => <div key={step} className="space-y-1"><div className={`h-1.5 rounded-full ${index < complete ? "bg-blue-600" : "bg-slate-200 dark:bg-zinc-700"}`} /><span className="block text-[10px] leading-3 text-slate-500 dark:text-zinc-400">{step}</span></div>)}</div>{video.error && <p className="mt-2 text-xs text-rose-600">{video.error}</p>}</div>; })}</div></section>;
 }
