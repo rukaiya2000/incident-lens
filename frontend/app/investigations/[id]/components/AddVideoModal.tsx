@@ -246,7 +246,7 @@ export default function AddVideoModal({
         className="flex w-full max-w-lg flex-col gap-4 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-xl"
       >
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Add footage</h3>
+          <h3 className="text-sm font-semibold">Add evidence</h3>
           <button
             onClick={onClose}
             className="text-zinc-400 transition hover:text-[var(--foreground)]"

@@ -100,7 +100,7 @@ export default function InvestigationPage({ params }: { params: Promise<{ id: st
           onClick={() => setModalOpen(true)}
           className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] transition hover:opacity-90"
         >
-          <span className="text-base leading-none">+</span> Add video
+          <span className="text-base leading-none">+</span> Add evidence
         </button>
       </header>
 
