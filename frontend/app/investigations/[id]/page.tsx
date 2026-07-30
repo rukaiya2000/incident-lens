@@ -116,7 +116,7 @@ export default function InvestigationPage({ params }: { params: Promise<{ id: st
             <VideoList videos={investigation.videos} selected={selected} onToggle={toggleVideo} />
           </section>
           <ProcessingStatus videos={investigation.videos} />
-          <VideoPlayer ref={videoRef} />
+          {investigation.videos.length > 0 && <VideoPlayer ref={videoRef} />}
         </div>
 
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
