@@ -154,7 +154,7 @@ export default function Home() {
                     onChange={() => toggleCompare(inv.id)}
                     className="h-4 w-4 shrink-0 accent-[var(--accent)]"
                   />
-                  <Link href={`/investigations/${inv.id}`} className="flex flex-1 items-center justify-between gap-4">
+                  <Link href={`/investigations/${inv.id}`} className="flex min-w-0 flex-1 items-center justify-between gap-4">
                     <div className="flex min-w-0 flex-col">
                       <span className="font-medium">{inv.name}</span>
                       {inv.description && (
