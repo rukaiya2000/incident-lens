@@ -54,6 +54,8 @@ export default function Home() {
         </p>
       </header>
 
+      <Link href="/reports" className="self-start rounded border border-zinc-300 px-3 py-2 text-sm font-medium hover:border-zinc-500 dark:border-zinc-700">View analyzed reports →</Link>
+
       <form onSubmit={handleCreate} className="flex flex-col gap-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
         <h2 className="text-sm font-medium text-zinc-700 dark:text-zinc-300">New investigation</h2>
         <input

@@ -104,3 +104,18 @@ export function ask(investigationId: string, question: string, videoIds: string[
 export function mediaUrl(filename: string) {
   return `${API_BASE_URL}/media/${filename}`;
 }
+
+export interface ReportSummary {
+  investigation_id: string;
+  investigation_name: string;
+  video_id: string;
+  video_label: string;
+  status: VideoStatus;
+  error: string | null;
+  event_count: number;
+  highlights: string[];
+}
+
+export function listReports() {
+  return request<ReportSummary[]>("/reports");
+}
