@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import AnswerText from "../components/AnswerText";
 import { AskResponse, clipDownloadUrl, crossCaseAsk, getInvestigation, InvestigationDetail } from "../lib/api";
 
 function formatTime(seconds: number): string {
@@ -107,7 +108,7 @@ function CompareContent() {
         <div className="flex flex-col gap-5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
           <div>
             <h3 className="mb-1.5 text-xs font-semibold tracking-wide text-zinc-500 uppercase">Answer</h3>
-            <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{result.answer}</p>
+            <AnswerText text={result.answer} />
           </div>
           {result.evidence.length > 0 && (
             <div className="flex flex-col gap-2">

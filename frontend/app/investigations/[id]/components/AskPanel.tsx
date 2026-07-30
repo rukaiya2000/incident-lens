@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import AnswerText from "../../../components/AnswerText";
 import { ask, AskResponse, Evidence } from "../../../lib/api";
 import EvidenceCard from "./EvidenceCard";
 
@@ -115,7 +116,7 @@ export default function AskPanel({
             <h3 className="mb-1.5 text-xs font-semibold tracking-wide text-zinc-500 uppercase">
               Answer
             </h3>
-            <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{result.answer}</p>
+            <AnswerText text={result.answer} />
           </div>
           {result.evidence.length > 0 && (
             <div className="flex flex-col gap-2">
