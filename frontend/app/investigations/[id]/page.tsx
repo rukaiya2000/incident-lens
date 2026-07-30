@@ -81,6 +81,18 @@ export default function InvestigationPage({ params }: { params: Promise<{ id: st
     });
   }
 
+  function toggleAllVideos() {
+    if (!investigation) return;
+    const readyIds = investigation.videos.filter((video) => video.status === "ready").map((video) => video.id);
+    setSelected((previous) => (readyIds.every((id) => previous.has(id)) ? new Set() : new Set(readyIds)));
+  }
+
+  function toggleAllDocuments() {
+    if (!investigation) return;
+    const readyIds = (investigation.documents ?? []).filter((doc) => doc.status === "ready").map((doc) => doc.id);
+    setSelectedDocuments((previous) => (readyIds.every((id) => previous.has(id)) ? new Set() : new Set(readyIds)));
+  }
+
   function handleAskResult(result: AskResponse) {
     setHighlightVideoIds(new Set(result.evidence.map((evidence) => evidence.video_id)));
   }
@@ -116,12 +128,26 @@ export default function InvestigationPage({ params }: { params: Promise<{ id: st
                 <h2 className="text-sm font-semibold">Evidence sources</h2>
                 <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">Choose ready videos to search together.</p>
               </div>
-              <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-xs font-medium text-[var(--accent)]">{selected.size} selected</span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={toggleAllVideos}
+                  className="text-xs font-medium text-[var(--accent)] hover:underline"
+                >
+                  {readyVideos.length > 0 && readyVideos.every((video) => selected.has(video.id)) ? "Clear" : "Select all"}
+                </button>
+                <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-xs font-medium text-[var(--accent)]">{selected.size} selected</span>
+              </div>
             </div>
             <VideoList videos={investigation.videos} selected={selected} onToggle={toggleVideo} />
           </section>
           <ProcessingStatus videos={investigation.videos} />
-          <DocumentList documents={documents} selected={selectedDocuments} onToggle={toggleDocument} />
+          <DocumentList
+            documents={documents}
+            selected={selectedDocuments}
+            onToggle={toggleDocument}
+            onToggleAll={toggleAllDocuments}
+          />
         </aside>
         <div className="space-y-6">
           <section>

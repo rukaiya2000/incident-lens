@@ -126,6 +126,8 @@ function CaseLinkTab({
   const [filterKind, setFilterKind] = useState<CaseItemPreview["kind"] | "all">("all");
   const [addingIndex, setAddingIndex] = useState<number | null>(null);
   const [addedIndices, setAddedIndices] = useState<Set<number>>(new Set());
+  const [checkedIndices, setCheckedIndices] = useState<Set<number>>(new Set());
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
 
   async function handleFetch(e: React.FormEvent) {
     e.preventDefault();
@@ -139,6 +141,7 @@ function CaseLinkTab({
       setLabels(result.items.map((v) => v.label));
       setReferer(result.referer);
       setAddedIndices(new Set());
+      setCheckedIndices(new Set());
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not read that page");
     } finally {
@@ -146,24 +149,28 @@ function CaseLinkTab({
     }
   }
 
-  async function handleAdd(index: number) {
+  async function addItem(index: number, refererOverride?: string) {
     if (!items) return;
     const item = items[index];
+    if (item.kind === "document") {
+      await addDocumentFromUrl(investigationId, item.source_url, labels[index].trim());
+    } else {
+      await addVideoFromUrl(
+        investigationId,
+        item.source_url,
+        labels[index].trim(),
+        refererOverride ?? referer,
+        item.kind
+      );
+    }
+    setAddedIndices((prev) => new Set(prev).add(index));
+  }
+
+  async function handleAdd(index: number) {
     setAddingIndex(index);
     setError(null);
     try {
-      if (item.kind === "document") {
-        await addDocumentFromUrl(investigationId, item.source_url, labels[index].trim());
-      } else {
-        await addVideoFromUrl(
-          investigationId,
-          item.source_url,
-          labels[index].trim(),
-          referer,
-          item.kind
-        );
-      }
-      setAddedIndices((prev) => new Set(prev).add(index));
+      await addItem(index);
       onAdded();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to add item");
@@ -172,8 +179,56 @@ function CaseLinkTab({
     }
   }
 
+  function toggleChecked(index: number) {
+    setCheckedIndices((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index); else next.add(index);
+      return next;
+    });
+  }
+
+  function visibleAddableIndices(): number[] {
+    if (!items) return [];
+    return items
+      .map((item, i) => ({ item, i }))
+      .filter(
+        ({ item, i }) =>
+          (filterKind === "all" || item.kind === filterKind) &&
+          !addedIndices.has(i) &&
+          !existingSourceUrls.has(item.source_url)
+      )
+      .map(({ i }) => i);
+  }
+
+  function toggleSelectAllVisible() {
+    const visible = visibleAddableIndices();
+    setCheckedIndices((prev) =>
+      visible.every((i) => prev.has(i)) ? new Set() : new Set(visible)
+    );
+  }
+
+  async function handleAddSelected() {
+    const indices = [...checkedIndices];
+    if (indices.length === 0) return;
+    setError(null);
+    setBulkProgress({ done: 0, total: indices.length });
+    for (let n = 0; n < indices.length; n++) {
+      try {
+        await addItem(indices[n]);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Some items failed to add — check the footage list.");
+      }
+      setBulkProgress({ done: n + 1, total: indices.length });
+    }
+    setCheckedIndices(new Set());
+    setBulkProgress(null);
+    onAdded();
+  }
+
   const counts: Record<string, number> = {};
   for (const item of items ?? []) counts[item.kind] = (counts[item.kind] ?? 0) + 1;
+  const visibleAddable = visibleAddableIndices();
+  const allVisibleChecked = visibleAddable.length > 0 && visibleAddable.every((i) => checkedIndices.has(i));
 
   return (
     <div className="flex flex-col gap-4">
@@ -205,10 +260,18 @@ function CaseLinkTab({
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      {addedIndices.size > 0 && (
+      {addedIndices.size > 0 && !bulkProgress && (
         <p className="rounded-lg border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-3 py-2 text-xs text-[var(--accent)]">
           Ingestion started for {addedIndices.size} item{addedIndices.size === 1 ? "" : "s"} —
           you can keep adding more, or close this and check progress in the sidebar.
+        </p>
+      )}
+
+      {bulkProgress && (
+        <p className="flex items-center gap-2 rounded-lg border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-3 py-2 text-xs text-[var(--accent)]">
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          Adding {bulkProgress.done} of {bulkProgress.total}… this can take a while for large
+          videos, ingestion continues in the background either way.
         </p>
       )}
 
@@ -230,6 +293,26 @@ function CaseLinkTab({
               </button>
             ))}
           </div>
+          <div className="flex items-center justify-between gap-2 text-xs">
+            <label className="flex items-center gap-1.5 text-zinc-500">
+              <input
+                type="checkbox"
+                checked={allVisibleChecked}
+                disabled={visibleAddable.length === 0}
+                onChange={toggleSelectAllVisible}
+                className="h-3.5 w-3.5 accent-[var(--accent)]"
+              />
+              Select all in view ({visibleAddable.length} addable)
+            </label>
+            <button
+              type="button"
+              onClick={handleAddSelected}
+              disabled={checkedIndices.size === 0 || bulkProgress !== null}
+              className="flex items-center gap-1.5 rounded-full bg-gradient-to-r from-blue-600 to-indigo-700 px-3 py-1.5 font-medium text-white transition disabled:opacity-50"
+            >
+              Add {checkedIndices.size} selected
+            </button>
+          </div>
           <div className="flex max-h-80 flex-col gap-2 overflow-y-auto pr-1">
             {items.map((item, i) => {
               if (filterKind !== "all" && item.kind !== filterKind) return null;
@@ -239,6 +322,13 @@ function CaseLinkTab({
                   key={item.source_url}
                   className="flex items-center gap-3 rounded-lg border border-[var(--border)] p-2.5"
                 >
+                  <input
+                    type="checkbox"
+                    checked={checkedIndices.has(i)}
+                    disabled={added}
+                    onChange={() => toggleChecked(i)}
+                    className="h-4 w-4 shrink-0 accent-[var(--accent)]"
+                  />
                   {item.thumbnail_url ? (
                     <img
                       src={item.thumbnail_url}

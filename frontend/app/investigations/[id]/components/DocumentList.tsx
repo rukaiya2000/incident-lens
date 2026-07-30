@@ -14,19 +14,35 @@ export default function DocumentList({
   documents,
   selected,
   onToggle,
+  onToggleAll,
 }: {
   documents: CaseDocument[];
   selected: Set<string>;
   onToggle: (documentId: string) => void;
+  onToggleAll?: () => void;
 }) {
   if (documents.length === 0) return null;
+
+  const readyDocuments = documents.filter((doc) => doc.status === "ready");
+  const allSelected = readyDocuments.length > 0 && readyDocuments.every((doc) => selected.has(doc.id));
 
   return (
     <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
       <h2 className="mb-3 flex items-center justify-between text-xs font-semibold tracking-wide text-zinc-500 uppercase">
         <span>Documents</span>
-        <span className="rounded-full bg-[var(--accent)]/10 px-2 py-0.5 text-[var(--accent)] normal-case">
-          {selected.size} selected
+        <span className="flex items-center gap-2 normal-case">
+          {onToggleAll && (
+            <button
+              type="button"
+              onClick={onToggleAll}
+              className="text-xs font-medium text-[var(--accent)] hover:underline"
+            >
+              {allSelected ? "Clear" : "Select all"}
+            </button>
+          )}
+          <span className="rounded-full bg-[var(--accent)]/10 px-2 py-0.5 text-[var(--accent)]">
+            {selected.size} selected
+          </span>
         </span>
       </h2>
       <ul className="flex flex-col gap-2">
