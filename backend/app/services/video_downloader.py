@@ -11,9 +11,12 @@ def download(source_url: str, referer: str | None, dest_path: Path) -> None:
         "outtmpl": outtmpl,
         # No ext= constraints: HLS sources (e.g. Vimeo) report inconsistent extension
         # metadata on audio-only tracks, so filtering on ext excludes valid streams.
-        # merge_output_format below forces the final container to mp4 regardless.
         "format": "bestvideo[height<=720]+bestaudio/best[height<=720]/best",
+        # merge_output_format only applies when yt-dlp actually merges separate video+
+        # audio streams — a pure-audio source (e.g. SoundCloud) has nothing to merge and
+        # keeps its native extension (mp3) unless remuxed explicitly, so force that too.
         "merge_output_format": "mp4",
+        "postprocessors": [{"key": "FFmpegVideoRemuxer", "preferedformat": "mp4"}],
         "quiet": True,
         "noprogress": True,
     }

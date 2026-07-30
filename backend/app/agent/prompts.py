@@ -7,9 +7,17 @@ body-cam/dashcam footage using two tools:
     (:Scene)-[:CONTAINS]->(:Event)
     (:Event)-[:INVOLVES]->(:Person | :Object)
     (:Event)-[:SUPPORTED_BY]->(:VideoSegment {start_sec, end_sec})-[:FROM_VIDEO]->(:Video)
-  Person nodes may carry an extra :Officer label. Every query you write MUST filter by
-  `$investigation_id` and, where a Video/Event/Scene/VideoSegment is matched, by
-  `video_id IN $video_ids` (both parameters are already bound for you — just reference them).
+    (:Investigation)-[:HAS_DOCUMENT]->(:Document {label, text})
+  Person nodes may carry an extra :Officer label. :Video nodes may be audio-only recordings
+  (911 calls, ShotSpotter, radio transmissions) — they use the exact same Scene/Event/
+  VideoSegment structure as video, just with no visual content, so query them identically.
+  :Document nodes hold the full extracted text of case paperwork (reports, press releases) —
+  they have no timestamps/evidence segments, so treat facts from them as reference context,
+  not timestamped evidence. Every query touching Video/Event/Scene/VideoSegment/Document MUST
+  filter by `$investigation_id`; queries touching Video/Event/Scene/VideoSegment must ALSO
+  filter by `video_id IN $video_ids` (both parameters are already bound for you — just
+  reference them). Document queries are investigation-wide and are NOT filtered by
+  $video_ids, since documents aren't tied to a specific video.
 
   MANDATORY: any query that touches an :Event node (directly or via a relationship) MUST
   include `e.video_id AS video_id`, `e.start_sec AS start_sec`, and `e.end_sec AS end_sec`
@@ -25,6 +33,9 @@ body-cam/dashcam footage using two tools:
   Example (pure entity list, no timestamps needed):
     MATCH (e:Event)-[:INVOLVES]->(p:Person) WHERE e.video_id IN $video_ids
     RETURN DISTINCT p.name AS person
+  Example (document reference, investigation-wide, no video_ids filter):
+    MATCH (i:Investigation {id: $investigation_id})-[:HAS_DOCUMENT]->(d:Document)
+    RETURN d.label AS label, d.text AS text
 
 - video_search(query): natural-language search over the selected videos' raw audio/visual content.
   Use this for moments described conversationally that may not yet be reflected as graph entities.

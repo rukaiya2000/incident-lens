@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import ask, health, investigations, reports, videos
+from app.api import ask, documents, health, investigations, reports, videos
 from app.config import get_settings
 from app.graph.neo4j_client import close_driver
 from app.graph.schema import apply_schema
@@ -29,6 +29,7 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(investigations.router)
 app.include_router(videos.router)
+app.include_router(documents.router)
 app.include_router(ask.router)
 app.include_router(reports.router)
 

@@ -20,9 +20,11 @@ def get_investigation(investigation_id: str) -> dict | None:
             """
             MATCH (i:Investigation {id: $id})
             OPTIONAL MATCH (i)-[:HAS_VIDEO]->(v:Video)
+            OPTIONAL MATCH (i)-[:HAS_DOCUMENT]->(d:Document)
             RETURN i.id AS id, i.name AS name, i.description AS description,
                    i.tl_index_id AS tl_index_id,
-                   collect(v {.id, .label, .filename, .status, .tl_video_id, .error, .source_url}) AS videos
+                   collect(DISTINCT v {.id, .label, .filename, .status, .tl_video_id, .error, .source_url, .media_type}) AS videos,
+                   collect(DISTINCT d {.id, .label, .filename, .status, .error, .source_url}) AS documents
             """,
             id=investigation_id,
         )
@@ -31,6 +33,7 @@ def get_investigation(investigation_id: str) -> dict | None:
             return None
         data = dict(record)
         data["videos"] = [v for v in data["videos"] if v.get("id") is not None]
+        data["documents"] = [d for d in data["documents"] if d.get("id") is not None]
         return data
 
 
@@ -46,6 +49,30 @@ def find_video_by_source_url(investigation_id: str, source_url: str) -> dict | N
         )
         record = result.single()
         return dict(record["video"]) if record else None
+
+
+def find_document_by_source_url(investigation_id: str, source_url: str) -> dict | None:
+    with get_driver().session() as session:
+        result = session.run(
+            """
+            MATCH (i:Investigation {id: $investigation_id})-[:HAS_DOCUMENT]->(d:Document {source_url: $source_url})
+            RETURN d {.id, .label, .status} AS document
+            """,
+            investigation_id=investigation_id,
+            source_url=source_url,
+        )
+        record = result.single()
+        return dict(record["document"]) if record else None
+
+
+def get_document(document_id: str) -> dict | None:
+    with get_driver().session() as session:
+        result = session.run(
+            "MATCH (d:Document {id: $id}) RETURN d {.*} AS document",
+            id=document_id,
+        )
+        record = result.single()
+        return dict(record["document"]) if record else None
 
 
 def get_video(video_id: str) -> dict | None:

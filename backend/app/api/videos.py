@@ -61,10 +61,10 @@ async def add_video(
 @router.post("/case-source/preview", response_model=CaseSourceResponse)
 def preview_case_source(investigation_id: str, payload: CaseSourceRequest) -> CaseSourceResponse:
     try:
-        referer, videos = case_scraper.fetch_case_videos(payload.url)
+        referer, items = case_scraper.fetch_case_videos(payload.url)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"Could not read that case page: {exc}") from exc
-    return CaseSourceResponse(referer=referer, videos=videos)
+    return CaseSourceResponse(referer=referer, items=items)
 
 
 @router.post("/from-url")
@@ -96,11 +96,14 @@ def add_video_from_url(
         filename,
         initial_status="downloading",
         source_url=payload.source_url,
+        media_type=payload.media_type,
     )
 
-    tl_index_id = get_or_create_index(
-        investigation_id, investigation.get("tl_index_id"), settings.twelvelabs_index_name_prefix
-    )
+    tl_index_id = None
+    if payload.media_type == "video":
+        tl_index_id = get_or_create_index(
+            investigation_id, investigation.get("tl_index_id"), settings.twelvelabs_index_name_prefix
+        )
     background_tasks.add_task(
         run_ingestion_from_url,
         video_id,
@@ -109,6 +112,7 @@ def add_video_from_url(
         payload.source_url,
         payload.referer,
         dest_path,
+        payload.media_type,
     )
 
     return {"video_id": video_id, "status": "downloading"}

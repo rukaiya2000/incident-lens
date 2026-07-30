@@ -3,8 +3,8 @@ import json
 from app.models.extraction import VideoExtraction
 from app.services import openai_client, twelvelabs_client
 
-EXTRACTION_SYSTEM_PROMPT = """You convert a raw narrative description of a video into strict JSON \
-matching this schema:
+EXTRACTION_SYSTEM_PROMPT = """You convert a raw narrative description of a video or audio \
+recording into strict JSON matching this schema:
 
 {
   "events": [
@@ -29,13 +29,7 @@ Rules:
 """
 
 
-def extract_video(tl_video_id: str) -> tuple[list[dict], VideoExtraction]:
-    chapters = twelvelabs_client.get_chapters(tl_video_id)
-    narrative = twelvelabs_client.generate_incident_narrative(tl_video_id)
-
-    chapters_context = "\n".join(
-        f"Chapter {c['chapter_number']} ({c['start']}s-{c['end']}s): {c['summary']}" for c in chapters
-    )
+def structure_narrative_to_events(chapters_context: str, narrative: str) -> VideoExtraction:
     user_prompt = (
         f"Chapters:\n{chapters_context}\n\nNarrative:\n{narrative}\n\n"
         "Produce the JSON described in the system prompt."
@@ -53,5 +47,20 @@ def extract_video(tl_video_id: str) -> tuple[list[dict], VideoExtraction]:
     )
     raw = response.choices[0].message.content
     data = json.loads(raw)
-    extraction = VideoExtraction.model_validate(data)
+    return VideoExtraction.model_validate(data)
+
+
+def extract_video(tl_video_id: str) -> tuple[list[dict], VideoExtraction]:
+    chapters = twelvelabs_client.get_chapters(tl_video_id)
+    narrative = twelvelabs_client.generate_incident_narrative(tl_video_id)
+
+    chapters_context = "\n".join(
+        f"Chapter {c['chapter_number']} ({c['start']}s-{c['end']}s): {c['summary']}" for c in chapters
+    )
+    extraction = structure_narrative_to_events(chapters_context, narrative)
     return chapters, extraction
+
+
+def extract_audio_transcript(segments: list[dict]) -> VideoExtraction:
+    narrative = "\n".join(f"[{s['start']:.1f}s-{s['end']:.1f}s] {s['text']}" for s in segments)
+    return structure_narrative_to_events("(no chapters — audio-only source)", narrative)

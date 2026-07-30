@@ -18,6 +18,18 @@ export interface Video {
   tl_video_id: string | null;
   error?: string | null;
   source_url?: string | null;
+  media_type?: "video" | "audio";
+}
+
+export type DocumentStatus = "downloading" | "extracting" | "partial" | "ready" | "failed";
+
+export interface CaseDocument {
+  id: string;
+  label: string;
+  filename: string;
+  status: DocumentStatus;
+  source_url?: string | null;
+  error?: string | null;
 }
 
 export interface Investigation {
@@ -29,6 +41,7 @@ export interface Investigation {
 
 export interface InvestigationDetail extends Investigation {
   videos: Video[];
+  documents: CaseDocument[];
 }
 
 export interface VideoStatusResponse {
@@ -95,7 +108,8 @@ export function getVideoStatus(investigationId: string, videoId: string) {
   );
 }
 
-export interface CaseVideoPreview {
+export interface CaseItemPreview {
+  kind: "video" | "audio" | "document";
   label: string;
   source_url: string;
   duration_sec: number | null;
@@ -104,7 +118,7 @@ export interface CaseVideoPreview {
 
 export interface CaseSourceResponse {
   referer: string;
-  videos: CaseVideoPreview[];
+  items: CaseItemPreview[];
 }
 
 export function previewCaseSource(investigationId: string, url: string) {
@@ -119,14 +133,26 @@ export function addVideoFromUrl(
   investigationId: string,
   sourceUrl: string,
   label: string,
-  referer?: string
+  referer?: string,
+  mediaType: "video" | "audio" = "video"
 ) {
   return request<{ video_id: string; status: VideoStatus }>(
     `/investigations/${investigationId}/videos/from-url`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ source_url: sourceUrl, label, referer }),
+      body: JSON.stringify({ source_url: sourceUrl, label, referer, media_type: mediaType }),
+    }
+  );
+}
+
+export function addDocumentFromUrl(investigationId: string, sourceUrl: string, label: string) {
+  return request<{ document_id: string; status: DocumentStatus }>(
+    `/investigations/${investigationId}/documents/from-url`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source_url: sourceUrl, label }),
     }
   );
 }

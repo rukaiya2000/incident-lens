@@ -26,12 +26,33 @@ class Video(BaseModel):
     filename: str
     status: VideoStatus
     tl_video_id: str | None = None
+    media_type: Literal["video", "audio"] = "video"
+    source_url: str | None = None
 
 
 class VideoStatusResponse(BaseModel):
     video_id: str
     status: VideoStatus
     steps: dict[str, bool]
+    error: str | None = None
+
+
+DocumentStatus = Literal["downloading", "extracting", "partial", "ready", "failed"]
+
+
+class Document(BaseModel):
+    id: str
+    investigation_id: str
+    label: str
+    filename: str
+    status: DocumentStatus
+    source_url: str | None = None
+    error: str | None = None
+
+
+class DocumentStatusResponse(BaseModel):
+    document_id: str
+    status: DocumentStatus
     error: str | None = None
 
 
@@ -63,7 +84,8 @@ class CaseSourceRequest(BaseModel):
     url: str
 
 
-class CaseVideoPreview(BaseModel):
+class CaseItemPreview(BaseModel):
+    kind: Literal["video", "audio", "document"]
     label: str
     source_url: str
     duration_sec: float | None = None
@@ -72,10 +94,16 @@ class CaseVideoPreview(BaseModel):
 
 class CaseSourceResponse(BaseModel):
     referer: str
-    videos: list[CaseVideoPreview]
+    items: list[CaseItemPreview]
 
 
 class AddVideoFromUrlRequest(BaseModel):
     source_url: str
     label: str
     referer: str | None = None
+    media_type: Literal["video", "audio"] = "video"
+
+
+class AddDocumentFromUrlRequest(BaseModel):
+    source_url: str
+    label: str

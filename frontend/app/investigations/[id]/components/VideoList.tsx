@@ -55,7 +55,10 @@ export default function VideoList({
                 className="h-4 w-4 accent-[var(--accent)]"
               />
               <div className="flex min-w-0 flex-1 flex-col">
-                <span className="truncate text-sm font-medium">{video.label}</span>
+                <span className="truncate text-sm font-medium">
+                  {video.media_type === "audio" ? "🎙️ " : ""}
+                  {video.label}
+                </span>
                 {video.status === "partial" && video.error && (
                   <span className="truncate text-xs text-amber-600 dark:text-amber-500">
                     {video.error}

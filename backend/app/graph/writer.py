@@ -30,6 +30,7 @@ def create_video(
     filename: str,
     initial_status: str = "uploaded",
     source_url: str | None = None,
+    media_type: str = "video",
 ) -> None:
     with get_driver().session() as session:
         session.run(
@@ -38,7 +39,7 @@ def create_video(
             CREATE (v:Video {
                 id: $video_id, investigation_id: $investigation_id,
                 label: $label, filename: $filename, status: $initial_status, tl_video_id: null,
-                source_url: $source_url
+                source_url: $source_url, media_type: $media_type
             })
             CREATE (i)-[:HAS_VIDEO]->(v)
             """,
@@ -48,6 +49,54 @@ def create_video(
             filename=filename,
             initial_status=initial_status,
             source_url=source_url,
+            media_type=media_type,
+        )
+
+
+def create_document(
+    document_id: str,
+    investigation_id: str,
+    label: str,
+    filename: str,
+    source_url: str | None = None,
+    initial_status: str = "downloading",
+) -> None:
+    with get_driver().session() as session:
+        session.run(
+            """
+            MATCH (i:Investigation {id: $investigation_id})
+            CREATE (d:Document {
+                id: $document_id, investigation_id: $investigation_id,
+                label: $label, filename: $filename, status: $initial_status,
+                source_url: $source_url, text: null
+            })
+            CREATE (i)-[:HAS_DOCUMENT]->(d)
+            """,
+            document_id=document_id,
+            investigation_id=investigation_id,
+            label=label,
+            filename=filename,
+            initial_status=initial_status,
+            source_url=source_url,
+        )
+
+
+def set_document_status(document_id: str, status: str, error: str | None = None) -> None:
+    with get_driver().session() as session:
+        session.run(
+            "MATCH (d:Document {id: $id}) SET d.status = $status, d.error = $error",
+            id=document_id,
+            status=status,
+            error=error,
+        )
+
+
+def write_document_text(document_id: str, text: str) -> None:
+    with get_driver().session() as session:
+        session.run(
+            "MATCH (d:Document {id: $id}) SET d.text = $text",
+            id=document_id,
+            text=text,
         )
 
 

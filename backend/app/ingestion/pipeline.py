@@ -1,8 +1,8 @@
 from pathlib import Path
 
 from app.graph import writer
-from app.ingestion.extract import extract_video
-from app.services import twelvelabs_client, video_downloader
+from app.ingestion.extract import extract_audio_transcript, extract_video
+from app.services import document_downloader, openai_client, pdf_extractor, twelvelabs_client, video_downloader
 
 # Ordered checklist steps surfaced by the /status endpoint, matching PRD's
 # "uploaded -> indexing -> scenes -> entities -> graph written" visual.
@@ -31,6 +31,15 @@ def _index_and_extract(video_id: str, investigation_id: str, tl_index_id: str, f
     writer.set_video_status(video_id, "ready")
 
 
+def _transcribe_and_extract(video_id: str, investigation_id: str, file_path: Path) -> None:
+    writer.set_video_status(video_id, "extracting")
+    segments = openai_client.transcribe_audio(file_path)
+    extraction = extract_audio_transcript(segments)
+    writer.write_extraction(video_id, investigation_id, extraction)
+
+    writer.set_video_status(video_id, "ready")
+
+
 def run_ingestion(video_id: str, investigation_id: str, tl_index_id: str, file_path: Path) -> None:
     try:
         _index_and_extract(video_id, investigation_id, tl_index_id, file_path)
@@ -41,14 +50,33 @@ def run_ingestion(video_id: str, investigation_id: str, tl_index_id: str, file_p
 def run_ingestion_from_url(
     video_id: str,
     investigation_id: str,
-    tl_index_id: str,
+    tl_index_id: str | None,
     source_url: str,
     referer: str | None,
     dest_path: Path,
+    media_type: str = "video",
 ) -> None:
     try:
         writer.set_video_status(video_id, "downloading")
         video_downloader.download(source_url, referer, dest_path)
-        _index_and_extract(video_id, investigation_id, tl_index_id, dest_path)
+        if media_type == "audio":
+            _transcribe_and_extract(video_id, investigation_id, dest_path)
+        else:
+            assert tl_index_id is not None
+            _index_and_extract(video_id, investigation_id, tl_index_id, dest_path)
     except Exception as exc:  # noqa: BLE001 - surfaced to the UI, not swallowed silently
         writer.set_video_status(video_id, "partial", error=str(exc))
+
+
+def run_document_ingestion(document_id: str, investigation_id: str, source_url: str, dest_path: Path) -> None:
+    try:
+        writer.set_document_status(document_id, "downloading")
+        document_downloader.download(source_url, dest_path)
+
+        writer.set_document_status(document_id, "extracting")
+        text = pdf_extractor.extract_text(dest_path)
+        writer.write_document_text(document_id, text)
+
+        writer.set_document_status(document_id, "ready")
+    except Exception as exc:  # noqa: BLE001 - surfaced to the UI, not swallowed silently
+        writer.set_document_status(document_id, "partial", error=str(exc))

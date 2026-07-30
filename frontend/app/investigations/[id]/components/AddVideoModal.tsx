@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { addVideo, addVideoFromUrl, CaseVideoPreview, previewCaseSource, Video } from "../../../lib/api";
+import {
+  addDocumentFromUrl,
+  addVideo,
+  addVideoFromUrl,
+  CaseDocument,
+  CaseItemPreview,
+  previewCaseSource,
+  Video,
+} from "../../../lib/api";
 
 function formatDuration(seconds: number | null): string {
   if (seconds == null) return "—";
@@ -9,6 +17,12 @@ function formatDuration(seconds: number | null): string {
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
+
+const KIND_ICON: Record<CaseItemPreview["kind"], string> = {
+  video: "🎥",
+  audio: "🎙️",
+  document: "📄",
+};
 
 function UploadTab({
   investigationId,
@@ -107,8 +121,9 @@ function CaseLinkTab({
   const [fetching, setFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [referer, setReferer] = useState<string | undefined>(undefined);
-  const [videos, setVideos] = useState<CaseVideoPreview[] | null>(null);
+  const [items, setItems] = useState<CaseItemPreview[] | null>(null);
   const [labels, setLabels] = useState<string[]>([]);
+  const [filterKind, setFilterKind] = useState<CaseItemPreview["kind"] | "all">("all");
   const [addingIndex, setAddingIndex] = useState<number | null>(null);
   const [addedIndices, setAddedIndices] = useState<Set<number>>(new Set());
 
@@ -117,11 +132,11 @@ function CaseLinkTab({
     if (!url.trim()) return;
     setFetching(true);
     setError(null);
-    setVideos(null);
+    setItems(null);
     try {
       const result = await previewCaseSource(investigationId, url.trim());
-      setVideos(result.videos);
-      setLabels(result.videos.map((v) => v.label));
+      setItems(result.items);
+      setLabels(result.items.map((v) => v.label));
       setReferer(result.referer);
       setAddedIndices(new Set());
     } catch (err) {
@@ -132,19 +147,33 @@ function CaseLinkTab({
   }
 
   async function handleAdd(index: number) {
-    if (!videos) return;
+    if (!items) return;
+    const item = items[index];
     setAddingIndex(index);
     setError(null);
     try {
-      await addVideoFromUrl(investigationId, videos[index].source_url, labels[index].trim(), referer);
+      if (item.kind === "document") {
+        await addDocumentFromUrl(investigationId, item.source_url, labels[index].trim());
+      } else {
+        await addVideoFromUrl(
+          investigationId,
+          item.source_url,
+          labels[index].trim(),
+          referer,
+          item.kind
+        );
+      }
       setAddedIndices((prev) => new Set(prev).add(index));
       onAdded();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to add video");
+      setError(err instanceof Error ? err.message : "Failed to add item");
     } finally {
       setAddingIndex(null);
     }
   }
+
+  const counts: Record<string, number> = {};
+  for (const item of items ?? []) counts[item.kind] = (counts[item.kind] ?? 0) + 1;
 
   return (
     <div className="flex flex-col gap-4">
@@ -165,12 +194,12 @@ function CaseLinkTab({
             {fetching && (
               <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
             )}
-            {fetching ? "Fetching…" : "Fetch videos"}
+            {fetching ? "Fetching…" : "Fetch items"}
           </button>
         </div>
         <p className="text-xs text-zinc-500">
-          Pulls every embedded video on the page with its duration, so you can pick which ones
-          to ingest.
+          Pulls every video, audio recording, and document on the page, so you can pick which
+          ones to ingest.
         </p>
       </form>
 
@@ -178,32 +207,48 @@ function CaseLinkTab({
 
       {addedIndices.size > 0 && (
         <p className="rounded-lg border border-[var(--accent)]/30 bg-[var(--accent)]/10 px-3 py-2 text-xs text-[var(--accent)]">
-          Ingestion started for {addedIndices.size} video{addedIndices.size === 1 ? "" : "s"} —
-          you can keep adding more, or close this and check progress in the footage list.
+          Ingestion started for {addedIndices.size} item{addedIndices.size === 1 ? "" : "s"} —
+          you can keep adding more, or close this and check progress in the sidebar.
         </p>
       )}
 
-      {videos && (
+      {items && (
         <div className="flex flex-col gap-2">
-          <p className="text-xs text-zinc-500">
-            {videos.length} video{videos.length === 1 ? "" : "s"} found
-          </p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            {(["all", "video", "audio", "document"] as const).map((kind) => (
+              <button
+                key={kind}
+                type="button"
+                onClick={() => setFilterKind(kind)}
+                className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+                  filterKind === kind
+                    ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
+                    : "border-[var(--border)] text-zinc-500 hover:border-[var(--accent)]/40"
+                }`}
+              >
+                {kind === "all" ? `All (${items.length})` : `${KIND_ICON[kind]} ${kind} (${counts[kind] ?? 0})`}
+              </button>
+            ))}
+          </div>
           <div className="flex max-h-80 flex-col gap-2 overflow-y-auto pr-1">
-            {videos.map((video, i) => {
-              const added = addedIndices.has(i) || existingSourceUrls.has(video.source_url);
+            {items.map((item, i) => {
+              if (filterKind !== "all" && item.kind !== filterKind) return null;
+              const added = addedIndices.has(i) || existingSourceUrls.has(item.source_url);
               return (
                 <div
-                  key={video.source_url}
-                  className="flex items-center gap-3 rounded-2xl border border-slate-200 dark:border-zinc-700 p-2.5"
+                  key={item.source_url}
+                  className="flex items-center gap-3 rounded-lg border border-[var(--border)] p-2.5"
                 >
-                  {video.thumbnail_url ? (
+                  {item.thumbnail_url ? (
                     <img
-                      src={video.thumbnail_url}
+                      src={item.thumbnail_url}
                       alt=""
                       className="h-10 w-16 shrink-0 rounded object-cover"
                     />
                   ) : (
-                    <div className="h-10 w-16 shrink-0 rounded bg-zinc-200 dark:bg-zinc-800" />
+                    <div className="flex h-10 w-16 shrink-0 items-center justify-center rounded bg-zinc-200 text-lg dark:bg-zinc-800">
+                      {KIND_ICON[item.kind]}
+                    </div>
                   )}
                   <input
                     value={labels[i]}
@@ -213,7 +258,7 @@ function CaseLinkTab({
                     className="min-w-0 flex-1 rounded border border-transparent bg-transparent px-1.5 py-1 text-sm outline-none transition hover:border-[var(--border)] focus:border-[var(--accent)]"
                   />
                   <span className="shrink-0 font-mono text-xs text-zinc-500">
-                    {formatDuration(video.duration_sec)}
+                    {item.kind === "document" ? "PDF" : formatDuration(item.duration_sec)}
                   </span>
                   <button
                     type="button"
@@ -242,19 +287,23 @@ export default function AddVideoModal({
   onClose,
   onAdded,
   existingVideos,
+  existingDocuments,
 }: {
   investigationId: string;
   isOpen: boolean;
   onClose: () => void;
   onAdded: () => void;
   existingVideos: Video[];
+  existingDocuments: CaseDocument[];
 }) {
   const [tab, setTab] = useState<"upload" | "link">("upload");
 
   if (!isOpen) return null;
 
   const existingSourceUrls = new Set(
-    existingVideos.map((v) => v.source_url).filter((url): url is string => !!url)
+    [...existingVideos, ...existingDocuments]
+      .map((v) => v.source_url)
+      .filter((url): url is string => !!url)
   );
 
   return (
