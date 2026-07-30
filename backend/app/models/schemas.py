@@ -1,10 +1,9 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-VideoStatus = Literal[
-    "downloading", "uploaded", "indexing", "indexed", "extracting", "partial", "ready", "failed"
-]
+VideoStatus = Literal["downloading", "uploaded", "indexing", "indexed", "extracting", "partial", "ready", "failed"]
+DocumentStatus = Literal["downloading", "extracting", "partial", "ready", "failed"]
 
 
 class InvestigationCreate(BaseModel):
@@ -30,16 +29,6 @@ class Video(BaseModel):
     source_url: str | None = None
 
 
-class VideoStatusResponse(BaseModel):
-    video_id: str
-    status: VideoStatus
-    steps: dict[str, bool]
-    error: str | None = None
-
-
-DocumentStatus = Literal["downloading", "extracting", "partial", "ready", "failed"]
-
-
 class Document(BaseModel):
     id: str
     investigation_id: str
@@ -47,6 +36,13 @@ class Document(BaseModel):
     filename: str
     status: DocumentStatus
     source_url: str | None = None
+    error: str | None = None
+
+
+class VideoStatusResponse(BaseModel):
+    video_id: str
+    status: VideoStatus
+    steps: dict[str, bool]
     error: str | None = None
 
 
@@ -117,7 +113,7 @@ class AddDocumentFromUrlRequest(BaseModel):
 
 class GraphNode(BaseModel):
     id: str
-    type: Literal["Investigation", "Video", "Scene", "Event", "Person", "Officer", "Object", "Document"]
+    type: Literal["Investigation", "Video", "Scene", "Event", "Person", "Officer", "Object", "Document", "Claim"]
     label: str
 
 
@@ -130,3 +126,27 @@ class GraphEdge(BaseModel):
 class GraphData(BaseModel):
     nodes: list[GraphNode]
     edges: list[GraphEdge]
+
+
+class ClaimEvidence(BaseModel):
+    event_id: str
+    description: str
+    video_id: str
+    video_label: str
+    start_sec: float
+    end_sec: float
+    relationship: Literal["SUPPORTS", "CONTRADICTS"]
+
+
+class ClaimRecord(BaseModel):
+    id: str
+    text: str
+    speaker: str | None = None
+    claim_type: str
+    status: Literal["corroborated", "contradicted", "mixed", "unverified"]
+    assessment_summary: str
+    start_sec: float
+    end_sec: float
+    video_id: str
+    video_label: str
+    evidence: list[ClaimEvidence] = Field(default_factory=list)

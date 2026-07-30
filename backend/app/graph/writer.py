@@ -215,3 +215,104 @@ def _merge_object(session, investigation_id: str, event_id: str, name: str) -> N
         investigation_id=investigation_id,
         name=name,
     )
+
+
+def write_claims(video_id: str, investigation_id: str, extraction: VideoExtraction) -> None:
+    """Persist spoken/communicated assertions as evidence-bound Claim nodes."""
+    with get_driver().session() as session:
+        for index, claim in enumerate(extraction.claims):
+            claim_id = f"{video_id}-claim-{index}"
+            segment_id = f"{video_id}-claim-segment-{index}"
+            session.run(
+                """
+                MATCH (v:Video {id: $video_id})
+                MERGE (c:Claim {id: $claim_id})
+                SET c.investigation_id = $investigation_id,
+                    c.video_id = $video_id,
+                    c.text = $text,
+                    c.speaker = $speaker,
+                    c.claim_type = $claim_type,
+                    c.start_sec = $start_sec,
+                    c.end_sec = $end_sec,
+                    c.scene_number = $scene_number,
+                    c.status = 'unverified',
+                    c.assessment_summary = 'No cross-video assessment has been completed yet.'
+                MERGE (vs:VideoSegment {id: $segment_id})
+                SET vs.video_id = $video_id, vs.start_sec = $start_sec, vs.end_sec = $end_sec
+                MERGE (c)-[:STATED_IN]->(vs)
+                MERGE (vs)-[:FROM_VIDEO]->(v)
+                """,
+                video_id=video_id,
+                claim_id=claim_id,
+                segment_id=segment_id,
+                investigation_id=investigation_id,
+                text=claim.text,
+                speaker=claim.speaker,
+                claim_type=claim.claim_type,
+                start_sec=claim.start_sec,
+                end_sec=claim.end_sec,
+                scene_number=claim.scene_number,
+            )
+            if claim.speaker:
+                session.run(
+                    """
+                    MATCH (c:Claim {id: $claim_id})
+                    MERGE (p:Person {investigation_id: $investigation_id, name_key: toLower($speaker)})
+                    ON CREATE SET p.id = randomUUID(), p.name = $speaker
+                    MERGE (c)-[:MADE_BY]->(p)
+                    """,
+                    claim_id=claim_id,
+                    investigation_id=investigation_id,
+                    speaker=claim.speaker,
+                )
+
+
+def replace_claim_assessments(investigation_id: str, assessments: list[dict]) -> None:
+    """Replace derived support/contradiction links for a case without changing source claims."""
+    with get_driver().session() as session:
+        session.run(
+            """
+            MATCH (c:Claim {investigation_id: $investigation_id})
+            OPTIONAL MATCH (e:Event)-[r:SUPPORTS|CONTRADICTS]->(c)
+            DELETE r
+            """,
+            investigation_id=investigation_id,
+        )
+        for assessment in assessments:
+            session.run(
+                """
+                MATCH (c:Claim {id: $claim_id, investigation_id: $investigation_id})
+                SET c.status = $status, c.assessment_summary = $summary
+                """,
+                claim_id=assessment["claim_id"],
+                investigation_id=investigation_id,
+                status=assessment["status"],
+                summary=assessment["summary"],
+            )
+            for event_id in assessment["supporting_event_ids"]:
+                session.run(
+                    """
+                    MATCH (c:Claim {id: $claim_id, investigation_id: $investigation_id})
+                    MATCH (e:Event {id: $event_id})
+                    MERGE (e)-[:SUPPORTS]->(c)
+                    """,
+                    claim_id=assessment["claim_id"], investigation_id=investigation_id, event_id=event_id
+                )
+            for event_id in assessment["contradicting_event_ids"]:
+                session.run(
+                    """
+                    MATCH (c:Claim {id: $claim_id, investigation_id: $investigation_id})
+                    MATCH (e:Event {id: $event_id})
+                    MERGE (e)-[:CONTRADICTS]->(c)
+                    """,
+                    claim_id=assessment["claim_id"], investigation_id=investigation_id, event_id=event_id
+                )
+
+def delete_claims_for_video(video_id: str) -> None:
+    with get_driver().session() as session:
+        session.run(
+            """
+            MATCH (c:Claim {video_id: $video_id})
+            DETACH DELETE c
+            """, video_id=video_id
+        )

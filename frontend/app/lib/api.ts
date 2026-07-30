@@ -227,3 +227,33 @@ export interface ReportSummary {
 export function listReports() {
   return request<ReportSummary[]>("/reports");
 }
+export interface ClaimEvidence {
+  event_id: string;
+  description: string;
+  video_id: string;
+  video_label: string;
+  start_sec: number;
+  end_sec: number;
+  relationship: "SUPPORTS" | "CONTRADICTS";
+}
+
+export interface ClaimRecord {
+  id: string;
+  text: string;
+  speaker: string | null;
+  claim_type: string;
+  status: "corroborated" | "contradicted" | "mixed" | "unverified";
+  assessment_summary: string;
+  start_sec: number;
+  end_sec: number;
+  video_id: string;
+  video_label: string;
+  evidence: ClaimEvidence[];
+}
+
+export function listClaims(investigationId: string) {
+  return request<ClaimRecord[]>(`/investigations/${investigationId}/claims`);
+}
+export function rebuildClaimIntelligence(investigationId: string) {
+  return request<{ started: boolean }>(`/investigations/${investigationId}/claims/rebuild`, { method: "POST" });
+}

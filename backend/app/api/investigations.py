@@ -1,9 +1,10 @@
 import uuid
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 
 from app.graph import reader, writer
-from app.models.schemas import GraphData, Investigation, InvestigationCreate
+from app.ingestion.pipeline import rebuild_claim_intelligence
+from app.models.schemas import ClaimRecord, GraphData, Investigation, InvestigationCreate
 
 router = APIRouter(prefix="/investigations")
 
@@ -30,7 +31,21 @@ def get_investigation(investigation_id: str) -> dict:
 
 @router.get("/{investigation_id}/graph", response_model=GraphData)
 def get_investigation_graph(investigation_id: str) -> GraphData:
-    investigation = reader.get_investigation(investigation_id)
-    if investigation is None:
+    if reader.get_investigation(investigation_id) is None:
         raise HTTPException(status_code=404, detail="Investigation not found")
     return GraphData(**reader.get_graph_data(investigation_id))
+
+
+@router.get("/{investigation_id}/claims", response_model=list[ClaimRecord])
+def get_claims(investigation_id: str) -> list[dict]:
+    if reader.get_investigation(investigation_id) is None:
+        raise HTTPException(status_code=404, detail="Investigation not found")
+    return reader.list_claims(investigation_id)
+
+
+@router.post("/{investigation_id}/claims/rebuild")
+def rebuild_claims(investigation_id: str, background_tasks: BackgroundTasks) -> dict:
+    if reader.get_investigation(investigation_id) is None:
+        raise HTTPException(status_code=404, detail="Investigation not found")
+    background_tasks.add_task(rebuild_claim_intelligence, investigation_id)
+    return {"started": True}

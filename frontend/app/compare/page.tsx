@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { AskResponse, clipDownloadUrl, crossCaseAsk, getInvestigation, InvestigationDetail } from "../lib/api";
 
 function formatTime(seconds: number): string {
@@ -11,7 +11,7 @@ function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export default function ComparePage() {
+function CompareContent() {
   const searchParams = useSearchParams();
   const ids = (searchParams.get("ids") ?? "").split(",").filter(Boolean);
 
@@ -149,5 +149,13 @@ export default function ComparePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ComparePage() {
+  return (
+    <Suspense fallback={<div className="mx-auto w-full max-w-3xl px-6 py-12 text-sm text-zinc-500">Loading comparison...</div>}>
+      <CompareContent />
+    </Suspense>
   );
 }

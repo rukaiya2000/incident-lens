@@ -203,3 +203,62 @@ def run_read_query(cypher: str, investigation_ids: list[str], video_ids: list[st
         rows = [dict(record) for record in result]
         print(f"[graph_query] rows={rows[:5]!r}")
         return rows
+
+
+def get_claim_assessment_context(investigation_id: str) -> tuple[list[dict], list[dict]]:
+    """Return the limited, case-scoped facts used by the claim assessor."""
+    with get_driver().session() as session:
+        claims = [dict(record) for record in session.run(
+            """
+            MATCH (c:Claim {investigation_id: $investigation_id})
+            RETURN c.id AS id, c.text AS text, c.speaker AS speaker,
+                   c.claim_type AS claim_type, c.start_sec AS start_sec, c.end_sec AS end_sec
+            ORDER BY c.start_sec
+            """, investigation_id=investigation_id
+        )]
+        events = [dict(record) for record in session.run(
+            """
+            MATCH (i:Investigation {id: $investigation_id})-[:HAS_VIDEO]->(:Video)<-[:FROM_VIDEO]-(vs:VideoSegment)<-[:SUPPORTED_BY]-(e:Event)
+            RETURN DISTINCT e.id AS id, e.description AS description, e.video_id AS video_id,
+                            e.start_sec AS start_sec, e.end_sec AS end_sec
+            ORDER BY e.start_sec
+            """, investigation_id=investigation_id
+        )]
+    return claims, events
+
+
+def list_claims(investigation_id: str) -> list[dict]:
+    with get_driver().session() as session:
+        result = session.run(
+            """
+            MATCH (i:Investigation {id: $investigation_id})-[:HAS_VIDEO]->(v:Video)
+            MATCH (c:Claim {investigation_id: $investigation_id, video_id: v.id})
+            OPTIONAL MATCH (e:Event)-[relation:SUPPORTS|CONTRADICTS]->(c)
+            OPTIONAL MATCH (support_video:Video {id: e.video_id})
+            RETURN c.id AS id, c.text AS text, c.speaker AS speaker, c.claim_type AS claim_type,
+                   c.status AS status, c.assessment_summary AS assessment_summary,
+                   c.start_sec AS start_sec, c.end_sec AS end_sec,
+                   v.id AS video_id, v.label AS video_label,
+                   collect({event_id: e.id, description: e.description, video_id: e.video_id,
+                            video_label: support_video.label, start_sec: e.start_sec,
+                            end_sec: e.end_sec, relationship: type(relation)}) AS evidence
+            ORDER BY c.start_sec
+            """, investigation_id=investigation_id
+        )
+        claims = []
+        for record in result:
+            data = dict(record)
+            data["evidence"] = [item for item in data["evidence"] if item["event_id"] is not None]
+            claims.append(data)
+        return claims
+
+def list_ready_videos_for_claim_rebuild(investigation_id: str) -> list[dict]:
+    with get_driver().session() as session:
+        result = session.run(
+            """
+            MATCH (:Investigation {id: $investigation_id})-[:HAS_VIDEO]->(v:Video)
+            WHERE v.status = 'ready' AND v.tl_video_id IS NOT NULL
+            RETURN v.id AS id, v.tl_video_id AS tl_video_id
+            """, investigation_id=investigation_id
+        )
+        return [dict(record) for record in result]
