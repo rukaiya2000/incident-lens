@@ -6,7 +6,7 @@ from twelvelabs import TwelveLabs
 from app.config import get_settings
 
 # Verified against twelvelabs==0.4.5 signatures; re-check if the pin changes.
-MARENGO_ENGINE = "marengo2.7"
+MARENGO_ENGINE = "marengo3.0"
 PEGASUS_ENGINE = "pegasus1.2"
 
 
