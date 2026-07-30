@@ -113,3 +113,20 @@ class AddVideoFromUrlRequest(BaseModel):
 class AddDocumentFromUrlRequest(BaseModel):
     source_url: str
     label: str
+
+
+class GraphNode(BaseModel):
+    id: str
+    type: Literal["Investigation", "Video", "Scene", "Event", "Person", "Officer", "Object", "Document"]
+    label: str
+
+
+class GraphEdge(BaseModel):
+    source: str
+    target: str
+    type: str
+
+
+class GraphData(BaseModel):
+    nodes: list[GraphNode]
+    edges: list[GraphEdge]

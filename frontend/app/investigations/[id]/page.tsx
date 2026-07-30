@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { use, useCallback, useEffect, useRef, useState } from "react";
-import { Evidence, getInvestigation, InvestigationDetail, mediaUrl } from "../../lib/api";
+import { AskResponse, Evidence, getInvestigation, InvestigationDetail, mediaUrl } from "../../lib/api";
 import AddVideoModal from "./components/AddVideoModal";
 import AskPanel from "./components/AskPanel";
 import DocumentList from "./components/DocumentList";
+import GraphView from "./components/GraphView";
 import ProcessingStatus from "./components/ProcessingStatus";
 import VideoList from "./components/VideoList";
 import VideoPlayer from "./components/VideoPlayer";
@@ -15,6 +16,8 @@ export default function InvestigationPage({ params }: { params: Promise<{ id: st
   const [investigation, setInvestigation] = useState<InvestigationDetail | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);
+  const [rightTab, setRightTab] = useState<"ask" | "graph">("ask");
+  const [highlightVideoIds, setHighlightVideoIds] = useState<Set<string>>(new Set());
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const refresh = useCallback(async () => {
@@ -49,6 +52,10 @@ export default function InvestigationPage({ params }: { params: Promise<{ id: st
       if (next.has(videoId)) next.delete(videoId); else next.add(videoId);
       return next;
     });
+  }
+
+  function handleAskResult(result: AskResponse) {
+    setHighlightVideoIds(new Set(result.evidence.map((ev) => ev.video_id)));
   }
 
   function playEvidence(evidence: Evidence) {
@@ -123,11 +130,38 @@ export default function InvestigationPage({ params }: { params: Promise<{ id: st
         </div>
 
         <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
-          <AskPanel
-            investigationId={id}
-            selectedVideoIds={[...selected]}
-            onPlayEvidence={playEvidence}
-          />
+          <div className="mb-4 flex gap-1 rounded-lg bg-zinc-100 p-1 text-sm dark:bg-zinc-900">
+            <button
+              onClick={() => setRightTab("ask")}
+              className={`flex-1 rounded-md px-3 py-1.5 font-medium transition ${
+                rightTab === "ask"
+                  ? "bg-[var(--surface)] shadow-sm"
+                  : "text-zinc-500 hover:text-[var(--foreground)]"
+              }`}
+            >
+              Ask
+            </button>
+            <button
+              onClick={() => setRightTab("graph")}
+              className={`flex-1 rounded-md px-3 py-1.5 font-medium transition ${
+                rightTab === "graph"
+                  ? "bg-[var(--surface)] shadow-sm"
+                  : "text-zinc-500 hover:text-[var(--foreground)]"
+              }`}
+            >
+              Graph
+            </button>
+          </div>
+          {rightTab === "ask" ? (
+            <AskPanel
+              investigationId={id}
+              selectedVideoIds={[...selected]}
+              onPlayEvidence={playEvidence}
+              onResult={handleAskResult}
+            />
+          ) : (
+            <GraphView investigationId={id} highlightVideoIds={highlightVideoIds} />
+          )}
         </div>
       </div>
 

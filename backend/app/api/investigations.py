@@ -3,7 +3,7 @@ import uuid
 from fastapi import APIRouter, HTTPException
 
 from app.graph import reader, writer
-from app.models.schemas import Investigation, InvestigationCreate
+from app.models.schemas import GraphData, Investigation, InvestigationCreate
 
 router = APIRouter(prefix="/investigations")
 
@@ -26,3 +26,11 @@ def get_investigation(investigation_id: str) -> dict:
     if investigation is None:
         raise HTTPException(status_code=404, detail="Investigation not found")
     return investigation
+
+
+@router.get("/{investigation_id}/graph", response_model=GraphData)
+def get_investigation_graph(investigation_id: str) -> GraphData:
+    investigation = reader.get_investigation(investigation_id)
+    if investigation is None:
+        raise HTTPException(status_code=404, detail="Investigation not found")
+    return GraphData(**reader.get_graph_data(investigation_id))

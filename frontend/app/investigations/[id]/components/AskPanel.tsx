@@ -4,32 +4,48 @@ import { useState } from "react";
 import { ask, AskResponse, Evidence } from "../../../lib/api";
 import EvidenceCard from "./EvidenceCard";
 
+const DISCREPANCY_PROMPT =
+  "Find any inconsistencies or contradictions between what different videos/officers/statements describe, especially around overlapping events or timing. Phrase each finding as a 'potential discrepancy', never as an accusation, and cite the specific videos/timestamps on each side.";
+
 export default function AskPanel({
   investigationId,
   selectedVideoIds,
   onPlayEvidence,
+  onResult,
 }: {
   investigationId: string;
   selectedVideoIds: string[];
   onPlayEvidence: (evidence: Evidence) => void;
+  onResult?: (result: AskResponse) => void;
 }) {
   const [question, setQuestion] = useState("");
   const [asking, setAsking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AskResponse | null>(null);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!question.trim() || selectedVideoIds.length === 0) return;
+  async function submitQuestion(q: string) {
+    if (!q.trim() || selectedVideoIds.length === 0) return;
     setAsking(true);
     setError(null);
     try {
-      setResult(await ask(investigationId, question.trim(), selectedVideoIds));
+      const response = await ask(investigationId, q.trim(), selectedVideoIds);
+      setResult(response);
+      onResult?.(response);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to get an answer");
     } finally {
       setAsking(false);
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    await submitQuestion(question);
+  }
+
+  async function handleFindDiscrepancies() {
+    setQuestion(DISCREPANCY_PROMPT);
+    await submitQuestion(DISCREPANCY_PROMPT);
   }
 
   return (
@@ -49,11 +65,21 @@ export default function AskPanel({
           }}
         />
         <div className="flex items-center justify-between">
-          <p className="text-xs text-zinc-500">
-            {selectedVideoIds.length === 0
-              ? "Select at least one video to ask a question."
-              : `Scoped to ${selectedVideoIds.length} video${selectedVideoIds.length > 1 ? "s" : ""}`}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-zinc-500">
+              {selectedVideoIds.length === 0
+                ? "Select at least one video to ask a question."
+                : `Scoped to ${selectedVideoIds.length} video${selectedVideoIds.length > 1 ? "s" : ""}`}
+            </p>
+            <button
+              type="button"
+              onClick={handleFindDiscrepancies}
+              disabled={asking || selectedVideoIds.length === 0}
+              className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 transition hover:bg-amber-100 disabled:opacity-50 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300"
+            >
+              ⚠️ Find discrepancies
+            </button>
+          </div>
           <button
             type="submit"
             disabled={asking || !question.trim() || selectedVideoIds.length === 0}

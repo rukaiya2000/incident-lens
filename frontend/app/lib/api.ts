@@ -174,6 +174,37 @@ export function crossCaseAsk(investigationIds: string[], question: string) {
   });
 }
 
+export type GraphNodeType =
+  | "Investigation"
+  | "Video"
+  | "Scene"
+  | "Event"
+  | "Person"
+  | "Officer"
+  | "Object"
+  | "Document";
+
+export interface GraphNode {
+  id: string;
+  type: GraphNodeType;
+  label: string;
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  type: string;
+}
+
+export interface GraphData {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
+export function getGraphData(investigationId: string) {
+  return request<GraphData>(`/investigations/${investigationId}/graph`);
+}
+
 export function mediaUrl(filename: string) {
   return `${API_BASE_URL}/media/${filename}`;
 }

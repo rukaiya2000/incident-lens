@@ -85,6 +85,108 @@ def get_video(video_id: str) -> dict | None:
         return dict(record["video"]) if record else None
 
 
+def get_graph_data(investigation_id: str) -> dict:
+    """Assembles a renderable node/edge graph for one investigation: Investigation is the
+    root, fanning out to Video/Document, then Video -> Scene -> Event -> Person/Object.
+    Events without a Scene parent (e.g. audio-derived events, which skip scene detection)
+    connect directly to their Video so nothing is orphaned in the visualization."""
+    with get_driver().session() as session:
+        videos = [
+            dict(r)
+            for r in session.run(
+                "MATCH (i:Investigation {id: $id})-[:HAS_VIDEO]->(v:Video) "
+                "RETURN v.id AS id, v.label AS label, v.media_type AS media_type",
+                id=investigation_id,
+            )
+        ]
+        video_ids = [v["id"] for v in videos]
+
+        documents = [
+            dict(r)
+            for r in session.run(
+                "MATCH (i:Investigation {id: $id})-[:HAS_DOCUMENT]->(d:Document) "
+                "RETURN d.id AS id, d.label AS label",
+                id=investigation_id,
+            )
+        ]
+
+        scenes = [
+            dict(r)
+            for r in session.run(
+                "MATCH (s:Scene) WHERE s.video_id IN $video_ids "
+                "RETURN s.id AS id, s.video_id AS video_id, s.chapter_number AS chapter_number",
+                video_ids=video_ids,
+            )
+        ]
+        scene_ids = {s["id"] for s in scenes}
+
+        events = [
+            dict(r)
+            for r in session.run(
+                "MATCH (e:Event) WHERE e.video_id IN $video_ids "
+                "RETURN e.id AS id, e.video_id AS video_id, e.description AS description, "
+                "e.start_sec AS start_sec, e.end_sec AS end_sec",
+                video_ids=video_ids,
+            )
+        ]
+
+        scene_contains_event = [
+            dict(r)
+            for r in session.run(
+                "MATCH (s:Scene)-[:CONTAINS]->(e:Event) WHERE s.video_id IN $video_ids "
+                "RETURN s.id AS scene_id, e.id AS event_id",
+                video_ids=video_ids,
+            )
+        ]
+        events_with_scene = {row["event_id"] for row in scene_contains_event}
+
+        involves = [
+            dict(r)
+            for r in session.run(
+                "MATCH (e:Event)-[:INVOLVES]->(n) WHERE e.video_id IN $video_ids "
+                "RETURN e.id AS event_id, n.id AS node_id, labels(n) AS node_labels, n.name AS name",
+                video_ids=video_ids,
+            )
+        ]
+
+    nodes: dict[str, dict] = {
+        investigation_id: {"id": investigation_id, "type": "Investigation", "label": "Case"}
+    }
+    edges: list[dict] = []
+
+    for v in videos:
+        nodes[v["id"]] = {"id": v["id"], "type": "Video", "label": v["label"]}
+        edges.append({"source": investigation_id, "target": v["id"], "type": "HAS_VIDEO"})
+
+    for d in documents:
+        nodes[d["id"]] = {"id": d["id"], "type": "Document", "label": d["label"]}
+        edges.append({"source": investigation_id, "target": d["id"], "type": "HAS_DOCUMENT"})
+
+    for s in scenes:
+        nodes[s["id"]] = {"id": s["id"], "type": "Scene", "label": f"Scene {s['chapter_number']}"}
+        edges.append({"source": s["video_id"], "target": s["id"], "type": "CONTAINS"})
+
+    for e in events:
+        label = (e["description"] or "")[:60]
+        nodes[e["id"]] = {"id": e["id"], "type": "Event", "label": label}
+        if e["id"] in events_with_scene:
+            continue  # edge added below from scene_contains_event
+        edges.append({"source": e["video_id"], "target": e["id"], "type": "CONTAINS"})
+
+    for row in scene_contains_event:
+        if row["scene_id"] in scene_ids:
+            edges.append({"source": row["scene_id"], "target": row["event_id"], "type": "CONTAINS"})
+
+    for row in involves:
+        node_labels = row["node_labels"] or []
+        node_type = "Officer" if "Officer" in node_labels else ("Person" if "Person" in node_labels else "Object")
+        if row["node_id"] not in nodes:
+            nodes[row["node_id"]] = {"id": row["node_id"], "type": node_type, "label": row["name"]}
+        edges.append({"source": row["event_id"], "target": row["node_id"], "type": "INVOLVES"})
+
+    return {"nodes": list(nodes.values()), "edges": edges}
+
+
 def run_read_query(cypher: str, investigation_ids: list[str], video_ids: list[str]) -> list[dict]:
     """Executes agent-authored Cypher, scoped to one or more investigations. Read-only:
     rejects any statement containing a write keyword before it ever reaches the driver."""
