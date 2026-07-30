@@ -50,10 +50,13 @@ def run_read_query(cypher: str, investigation_id: str, video_ids: list[str]) -> 
     if _WRITE_KEYWORDS.search(cypher):
         raise ValueError("Only read-only Cypher queries are allowed.")
 
+    print(f"[graph_query] cypher={cypher!r}")
     with get_driver().session() as session:
         result = session.run(
             cypher,
             investigation_id=investigation_id,
             video_ids=video_ids,
         )
-        return [dict(record) for record in result]
+        rows = [dict(record) for record in result]
+        print(f"[graph_query] rows={rows[:5]!r}")
+        return rows

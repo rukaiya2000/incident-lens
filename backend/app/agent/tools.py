@@ -47,6 +47,7 @@ def build_tools(
                 "start_sec": r["start"],
                 "end_sec": r["end"],
                 "score": r["score"],
+                "snippet": r["snippet"],
             }
             enriched.append(entry)
             evidence_collector.append(
@@ -54,7 +55,7 @@ def build_tools(
                     "video_id": internal_video_id,
                     "start_sec": r["start"],
                     "end_sec": r["end"],
-                    "snippet": None,
+                    "snippet": r["snippet"],
                 }
             )
         return enriched
