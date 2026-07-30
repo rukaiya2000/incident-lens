@@ -158,11 +158,16 @@ export function addDocumentFromUrl(investigationId: string, sourceUrl: string, l
   );
 }
 
-export function ask(investigationId: string, question: string, videoIds: string[]) {
+export function ask(
+  investigationId: string,
+  question: string,
+  videoIds: string[],
+  documentIds?: string[]
+) {
   return request<AskResponse>(`/investigations/${investigationId}/ask`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, video_ids: videoIds }),
+    body: JSON.stringify({ question, video_ids: videoIds, document_ids: documentIds }),
   });
 }
 

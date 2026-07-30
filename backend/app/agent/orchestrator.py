@@ -37,24 +37,36 @@ def _dedup_and_sort(
     return evidence
 
 
-def ask(investigation_ids: list[str], question: str, video_ids: list[str] | None = None) -> AskResponse:
-    """Answers a question scoped to one or more investigations. Pass explicit video_ids to
-    scope to a hand-picked selection within a single case (the normal in-case Ask flow); omit
-    it to auto-scope to every ready video across all of investigation_ids (cross-case compare)."""
+def ask(
+    investigation_ids: list[str],
+    question: str,
+    video_ids: list[str] | None = None,
+    document_ids: list[str] | None = None,
+) -> AskResponse:
+    """Answers a question scoped to one or more investigations. Pass explicit video_ids/
+    document_ids to scope to a hand-picked selection within a single case (the normal in-case
+    Ask flow); omit either to auto-scope to every ready video / every ready document across
+    all of investigation_ids (cross-case compare)."""
     investigations = [inv for inv in (reader.get_investigation(iid) for iid in investigation_ids) if inv is not None]
     if not investigations:
         raise ValueError("No matching investigations found")
 
     videos_by_id: dict[str, dict] = {}
     video_investigation_name: dict[str, str] = {}
+    documents_by_id: dict[str, dict] = {}
     for inv in investigations:
         for v in inv["videos"]:
             videos_by_id[v["id"]] = v
             video_investigation_name[v["id"]] = inv["name"]
+        for d in inv["documents"]:
+            documents_by_id[d["id"]] = d
 
     if video_ids is None:
         video_ids = [vid for vid, v in videos_by_id.items() if v["status"] == "ready"]
     videos_by_id = {vid: v for vid, v in videos_by_id.items() if vid in video_ids}
+
+    if document_ids is None:
+        document_ids = [did for did, d in documents_by_id.items() if d["status"] == "ready"]
 
     video_labels = {vid: v["label"] for vid, v in videos_by_id.items()}
     tl_video_id_by_video_id = {
@@ -68,6 +80,7 @@ def ask(investigation_ids: list[str], question: str, video_ids: list[str] | None
         investigation_ids=investigation_ids,
         tl_index_ids=tl_index_ids,
         video_ids=video_ids,
+        document_ids=document_ids,
         tl_video_id_by_video_id=tl_video_id_by_video_id,
         video_id_by_tl_video_id=video_id_by_tl_video_id,
         evidence_collector=evidence_collector,

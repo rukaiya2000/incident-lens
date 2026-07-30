@@ -187,7 +187,9 @@ def get_graph_data(investigation_id: str) -> dict:
     return {"nodes": list(nodes.values()), "edges": edges}
 
 
-def run_read_query(cypher: str, investigation_ids: list[str], video_ids: list[str]) -> list[dict]:
+def run_read_query(
+    cypher: str, investigation_ids: list[str], video_ids: list[str], document_ids: list[str]
+) -> list[dict]:
     """Executes agent-authored Cypher, scoped to one or more investigations. Read-only:
     rejects any statement containing a write keyword before it ever reaches the driver."""
     if _WRITE_KEYWORDS.search(cypher):
@@ -199,6 +201,7 @@ def run_read_query(cypher: str, investigation_ids: list[str], video_ids: list[st
             cypher,
             investigation_ids=investigation_ids,
             video_ids=video_ids,
+            document_ids=document_ids,
         )
         rows = [dict(record) for record in result]
         print(f"[graph_query] rows={rows[:5]!r}")

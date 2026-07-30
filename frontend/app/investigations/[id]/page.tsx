@@ -16,6 +16,7 @@ export default function InvestigationPage({ params }: { params: Promise<{ id: st
   const { id } = use(params);
   const [investigation, setInvestigation] = useState<InvestigationDetail | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
   const [modalOpen, setModalOpen] = useState(false);
   const [rightTab, setRightTab] = useState<"ask" | "graph">("ask");
   const [highlightVideoIds, setHighlightVideoIds] = useState<Set<string>>(new Set());
@@ -27,6 +28,11 @@ export default function InvestigationPage({ params }: { params: Promise<{ id: st
     setSelected((previous) => {
       const readyIds = new Set(data.videos.filter((video) => video.status === "ready").map((video) => video.id));
       const next = new Set([...previous].filter((videoId) => readyIds.has(videoId)));
+      return next.size === 0 && previous.size === 0 && readyIds.size > 0 ? readyIds : next;
+    });
+    setSelectedDocuments((previous) => {
+      const readyIds = new Set(data.documents.filter((doc) => doc.status === "ready").map((doc) => doc.id));
+      const next = new Set([...previous].filter((docId) => readyIds.has(docId)));
       return next.size === 0 && previous.size === 0 && readyIds.size > 0 ? readyIds : next;
     });
   }, [id]);
@@ -49,6 +55,14 @@ export default function InvestigationPage({ params }: { params: Promise<{ id: st
     setSelected((previous) => {
       const next = new Set(previous);
       if (next.has(videoId)) next.delete(videoId); else next.add(videoId);
+      return next;
+    });
+  }
+
+  function toggleDocument(documentId: string) {
+    setSelectedDocuments((previous) => {
+      const next = new Set(previous);
+      if (next.has(documentId)) next.delete(documentId); else next.add(documentId);
       return next;
     });
   }
@@ -81,8 +95,54 @@ export default function InvestigationPage({ params }: { params: Promise<{ id: st
       </header>
 
       <div className="grid gap-7 xl:grid-cols-[320px_minmax(0,1fr)] xl:items-start">
-        <aside className="flex flex-col gap-5"><section className="rounded-2xl border border-white/80 bg-white/70 p-4 shadow-sm backdrop-blur-xl dark:border-white/5 dark:bg-zinc-950/65"><div className="mb-3 flex items-center justify-between"><div><h2 className="text-sm font-semibold">Evidence sources</h2><p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">Choose ready videos to search together.</p></div><span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-xs font-medium text-[var(--accent)]">{selected.size} selected</span></div><VideoList videos={investigation.videos} selected={selected} onToggle={toggleVideo} /></section><ProcessingStatus videos={investigation.videos} /><DocumentList documents={documents} /></aside>
-        <div className="space-y-6"><section><div className="mb-3 flex items-center justify-between"><div><h2 className="text-sm font-semibold">Footage review</h2><p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">Jump to supporting clips from each answer.</p></div>{activeVideo && <span className="max-w-48 truncate text-xs text-slate-500 dark:text-zinc-400">Now viewing: {activeVideo.label}</span>}</div><VideoPlayer ref={videoRef} src={activeVideo ? mediaUrl(activeVideo.filename) : undefined} /></section><ClaimsPanel investigationId={id} refreshKey={investigation.videos.map((video) => `${video.id}:${video.status}`).join("|")} onPlayEvidence={playEvidence} /><section className="rounded-3xl border border-white/80 bg-white/70 p-6 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-white/5 dark:bg-zinc-950/65"><div className="mb-4 flex gap-1 rounded-full bg-slate-100 p-1 text-sm dark:bg-zinc-900"><button onClick={() => setRightTab("ask")} className={`flex-1 rounded-full px-3 py-1.5 font-medium transition ${rightTab === "ask" ? "bg-white shadow-sm dark:bg-zinc-800" : "text-zinc-500 hover:text-[var(--foreground)]"}`}>Ask</button><button onClick={() => setRightTab("graph")} className={`flex-1 rounded-full px-3 py-1.5 font-medium transition ${rightTab === "graph" ? "bg-white shadow-sm dark:bg-zinc-800" : "text-zinc-500 hover:text-[var(--foreground)]"}`}>Graph</button></div>{rightTab === "ask" ? <AskPanel investigationId={id} selectedVideoIds={[...selected]} onPlayEvidence={playEvidence} onResult={handleAskResult} /> : <GraphView investigationId={id} highlightVideoIds={highlightVideoIds} />}</section></div>
+        <aside className="flex flex-col gap-5">
+          <section className="rounded-2xl border border-white/80 bg-white/70 p-4 shadow-sm backdrop-blur-xl dark:border-white/5 dark:bg-zinc-950/65">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold">Evidence sources</h2>
+                <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">Choose ready videos to search together.</p>
+              </div>
+              <span className="rounded-full bg-[var(--accent)]/10 px-2.5 py-1 text-xs font-medium text-[var(--accent)]">{selected.size} selected</span>
+            </div>
+            <VideoList videos={investigation.videos} selected={selected} onToggle={toggleVideo} />
+          </section>
+          <ProcessingStatus videos={investigation.videos} />
+          <DocumentList documents={documents} selected={selectedDocuments} onToggle={toggleDocument} />
+        </aside>
+        <div className="space-y-6">
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold">Footage review</h2>
+                <p className="mt-1 text-xs text-slate-500 dark:text-zinc-400">Jump to supporting clips from each answer.</p>
+              </div>
+              {activeVideo && <span className="max-w-48 truncate text-xs text-slate-500 dark:text-zinc-400">Now viewing: {activeVideo.label}</span>}
+            </div>
+            <VideoPlayer ref={videoRef} src={activeVideo ? mediaUrl(activeVideo.filename) : undefined} />
+          </section>
+          <ClaimsPanel
+            investigationId={id}
+            refreshKey={investigation.videos.map((video) => `${video.id}:${video.status}`).join("|")}
+            onPlayEvidence={playEvidence}
+          />
+          <section className="rounded-3xl border border-white/80 bg-white/70 p-6 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:border-white/5 dark:bg-zinc-950/65">
+            <div className="mb-4 flex gap-1 rounded-full bg-slate-100 p-1 text-sm dark:bg-zinc-900">
+              <button onClick={() => setRightTab("ask")} className={`flex-1 rounded-full px-3 py-1.5 font-medium transition ${rightTab === "ask" ? "bg-white shadow-sm dark:bg-zinc-800" : "text-zinc-500 hover:text-[var(--foreground)]"}`}>Ask</button>
+              <button onClick={() => setRightTab("graph")} className={`flex-1 rounded-full px-3 py-1.5 font-medium transition ${rightTab === "graph" ? "bg-white shadow-sm dark:bg-zinc-800" : "text-zinc-500 hover:text-[var(--foreground)]"}`}>Graph</button>
+            </div>
+            {rightTab === "ask" ? (
+              <AskPanel
+                investigationId={id}
+                selectedVideoIds={[...selected]}
+                selectedDocumentIds={[...selectedDocuments]}
+                onPlayEvidence={playEvidence}
+                onResult={handleAskResult}
+              />
+            ) : (
+              <GraphView investigationId={id} highlightVideoIds={highlightVideoIds} />
+            )}
+          </section>
+        </div>
       </div>
 
       <AddVideoModal investigationId={id} isOpen={modalOpen} onClose={() => setModalOpen(false)} onAdded={refresh} existingVideos={investigation.videos} existingDocuments={documents} />

@@ -8,6 +8,7 @@ def build_tools(
     investigation_ids: list[str],
     tl_index_ids: list[str],
     video_ids: list[str],
+    document_ids: list[str],
     tl_video_id_by_video_id: dict[str, str],
     video_id_by_tl_video_id: dict[str, str],
     evidence_collector: list[dict],
@@ -20,8 +21,9 @@ def build_tools(
     @tool
     def graph_query(cypher: str) -> list[dict]:
         """Run a read-only Cypher query against the incident graph, scoped to the selected
-        investigation(s) and videos. $investigation_ids and $video_ids are pre-bound."""
-        rows = reader.run_read_query(cypher, investigation_ids, video_ids)
+        investigation(s), videos, and documents. $investigation_ids, $video_ids, and
+        $document_ids are pre-bound."""
+        rows = reader.run_read_query(cypher, investigation_ids, video_ids, document_ids)
         for row in rows:
             if "start_sec" in row and "end_sec" in row:
                 evidence_collector.append(

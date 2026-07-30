@@ -55,6 +55,7 @@ class DocumentStatusResponse(BaseModel):
 class AskRequest(BaseModel):
     question: str
     video_ids: list[str]
+    document_ids: list[str] | None = None
 
 
 class CrossCaseAskRequest(BaseModel):

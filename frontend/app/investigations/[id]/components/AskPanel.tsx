@@ -10,11 +10,13 @@ const DISCREPANCY_PROMPT =
 export default function AskPanel({
   investigationId,
   selectedVideoIds,
+  selectedDocumentIds,
   onPlayEvidence,
   onResult,
 }: {
   investigationId: string;
   selectedVideoIds: string[];
+  selectedDocumentIds: string[];
   onPlayEvidence: (evidence: Evidence) => void;
   onResult?: (result: AskResponse) => void;
 }) {
@@ -22,13 +24,14 @@ export default function AskPanel({
   const [asking, setAsking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AskResponse | null>(null);
+  const hasScope = selectedVideoIds.length > 0 || selectedDocumentIds.length > 0;
 
   async function submitQuestion(q: string) {
-    if (!q.trim() || selectedVideoIds.length === 0) return;
+    if (!q.trim() || !hasScope) return;
     setAsking(true);
     setError(null);
     try {
-      const response = await ask(investigationId, q.trim(), selectedVideoIds);
+      const response = await ask(investigationId, q.trim(), selectedVideoIds, selectedDocumentIds);
       setResult(response);
       onResult?.(response);
     } catch (err) {
@@ -67,14 +70,18 @@ export default function AskPanel({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <p className="text-xs text-zinc-500">
-              {selectedVideoIds.length === 0
-                ? "Select at least one video to ask a question."
-                : `Scoped to ${selectedVideoIds.length} video${selectedVideoIds.length > 1 ? "s" : ""}`}
+              {!hasScope
+                ? "Select at least one video or document to ask a question."
+                : `Scoped to ${selectedVideoIds.length} video${selectedVideoIds.length > 1 ? "s" : ""}${
+                    selectedDocumentIds.length > 0
+                      ? `, ${selectedDocumentIds.length} document${selectedDocumentIds.length > 1 ? "s" : ""}`
+                      : ""
+                  }`}
             </p>
             <button
               type="button"
               onClick={handleFindDiscrepancies}
-              disabled={asking || selectedVideoIds.length === 0}
+              disabled={asking || !hasScope}
               className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-800 transition hover:bg-amber-100 disabled:opacity-50 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300"
             >
               ⚠️ Find discrepancies
@@ -82,7 +89,7 @@ export default function AskPanel({
           </div>
           <button
             type="submit"
-            disabled={asking || !question.trim() || selectedVideoIds.length === 0}
+            disabled={asking || !question.trim() || !hasScope}
             className="flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-600 to-indigo-700 px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] transition disabled:opacity-50"
           >
             {asking && (
