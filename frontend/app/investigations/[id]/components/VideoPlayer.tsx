@@ -7,7 +7,7 @@ const VideoPlayer = forwardRef<HTMLVideoElement>(function VideoPlayer(_props, re
     <video
       ref={ref}
       controls
-      className="w-full rounded-lg border border-zinc-200 bg-black dark:border-zinc-800"
+      className="aspect-video w-full rounded-xl border border-[var(--border)] bg-black shadow-sm"
     />
   );
 });

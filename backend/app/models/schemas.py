@@ -2,7 +2,9 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-VideoStatus = Literal["uploaded", "indexing", "indexed", "extracting", "partial", "ready", "failed"]
+VideoStatus = Literal[
+    "downloading", "uploaded", "indexing", "indexed", "extracting", "partial", "ready", "failed"
+]
 
 
 class InvestigationCreate(BaseModel):
@@ -55,3 +57,25 @@ class HealthResponse(BaseModel):
     neo4j: bool
     openai: bool
     twelvelabs: bool
+
+
+class CaseSourceRequest(BaseModel):
+    url: str
+
+
+class CaseVideoPreview(BaseModel):
+    label: str
+    source_url: str
+    duration_sec: float | None = None
+    thumbnail_url: str | None = None
+
+
+class CaseSourceResponse(BaseModel):
+    referer: str
+    videos: list[CaseVideoPreview]
+
+
+class AddVideoFromUrlRequest(BaseModel):
+    source_url: str
+    label: str
+    referer: str | None = None

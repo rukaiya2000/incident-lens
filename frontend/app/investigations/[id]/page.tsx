@@ -74,31 +74,44 @@ export default function InvestigationPage({ params }: { params: Promise<{ id: st
   }
 
   if (!investigation) {
-    return <div className="p-8 text-sm text-zinc-500">Loading...</div>;
+    return (
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 py-10">
+        <div className="h-8 w-64 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,340px)_1fr]">
+          <div className="h-48 animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-800" />
+          <div className="h-48 animate-pulse rounded-xl bg-zinc-200 dark:bg-zinc-800" />
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-6 py-10">
-      <header className="flex items-center justify-between">
+    <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-6 px-6 py-10">
+      <header className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">{investigation.name}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{investigation.name}</h1>
           {investigation.description && (
-            <p className="text-sm text-zinc-500">{investigation.description}</p>
+            <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
+              {investigation.description}
+            </p>
           )}
         </div>
         <button
           onClick={() => setModalOpen(true)}
-          className="rounded bg-zinc-900 px-4 py-2 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] transition hover:opacity-90"
         >
-          + Add video
+          <span className="text-base leading-none">+</span> Add video
         </button>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,320px)_1fr]">
-        <div className="flex flex-col gap-4">
-          <section>
-            <h2 className="mb-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Footage ({selected.size} selected)
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,340px)_1fr] md:items-start">
+        <div className="flex flex-col gap-5">
+          <section className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4 shadow-sm">
+            <h2 className="mb-3 flex items-center justify-between text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+              <span>Footage</span>
+              <span className="rounded-full bg-[var(--accent)]/10 px-2 py-0.5 text-[var(--accent)] normal-case">
+                {selected.size} selected
+              </span>
             </h2>
             <VideoList videos={investigation.videos} selected={selected} onToggle={toggleVideo} />
           </section>
@@ -106,7 +119,7 @@ export default function InvestigationPage({ params }: { params: Promise<{ id: st
           <VideoPlayer ref={videoRef} />
         </div>
 
-        <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-sm">
           <AskPanel
             investigationId={id}
             selectedVideoIds={[...selected]}

@@ -9,3 +9,4 @@ twelvelabs==0.4.5
 strands-agents==0.1.6
 strands-agents-tools==0.1.4
 python-dotenv==1.0.1
+yt-dlp==2026.7.4

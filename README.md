@@ -1,4 +1,4 @@
-# IncidentLens
+# Incident Lens
 
 Turns multi-source body-cam/dashcam footage into a temporal Neo4j knowledge graph, then answers investigative questions across selected videos with evidence-backed, timestamped answers.
 

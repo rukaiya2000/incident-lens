@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     neo4j_password: str
 
     twelvelabs_api_key: str
-    twelvelabs_index_name_prefix: str = "incidentgraph"
+    twelvelabs_index_name_prefix: str = "incidentlens"
 
     openai_api_key: str
     openai_model: str = "gpt-4o-mini"
