@@ -12,10 +12,31 @@ Incident Lens ingests footage and case documents, extracts scenes, events, peopl
   <img alt="Status" src="https://img.shields.io/badge/status-prototype-orange">
 </p>
 
+<p align="center">
+  <a href="https://drive.google.com/file/d/1erPDYIzdoVPnmUlmZ7DRsjvq0Yf1L5hy/view?usp=sharing">
+    <img alt="Watch the demo" src="https://img.shields.io/badge/▶%20Watch%20the%20demo-1a73e8?style=for-the-badge&logo=googledrive&logoColor=white">
+  </a>
+</p>
+
+---
+
+## How it works
+
+![Incident Lens workflow — a write path ingests evidence, indexes it with TwelveLabs, extracts typed entities with OpenAI and writes them to a Neo4j incident graph; a read path sends questions to a Strands agent that queries the graph and the raw footage, returning answers with timestamped evidence](docs/workflow.png)
+
+The system has two halves that meet at the graph.
+
+**Write path** — evidence goes in as video, audio or PDF. TwelveLabs indexes what is seen, said and written on screen. OpenAI structures that narrative into typed, time-bounded entities. Those land in Neo4j as nodes with a `PRECEDES` chain that makes the incident timeline queryable.
+
+**Read path** — you ask a question scoped to the evidence you selected. A Strands agent picks between two tools per question: `graph_query` for structured recall over the graph, `video_search` for a fresh look at the raw footage. The answer comes back with every statement tied to a video and a timecode you can play or export.
+
+📺 **[Watch the demo video](https://drive.google.com/file/d/1erPDYIzdoVPnmUlmZ7DRsjvq0Yf1L5hy/view?usp=sharing)** — a walkthrough of ingestion, the graph explorer, and evidence-backed Q&A.
+
 ---
 
 ## Table of contents
 
+- [How it works](#how-it-works)
 - [Why](#why)
 - [Features](#features)
 - [Architecture](#architecture)

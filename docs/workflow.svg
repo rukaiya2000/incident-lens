@@ -1,0 +1,190 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 940" width="1440" height="940" font-family="Inter, 'Helvetica Neue', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#16283C"/>
+    </marker>
+    <marker id="arrowLight" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7FD1C9"/>
+    </marker>
+    <marker id="arrowAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#C98A1E"/>
+    </marker>
+  </defs>
+
+  <rect width="1440" height="940" fill="#FBF7EC"/>
+
+  <!-- ── Title ───────────────────────────────────────────── -->
+  <text x="720" y="62" text-anchor="middle" font-size="40" font-weight="700" fill="#16283C">How Incident Lens Works</text>
+  <text x="720" y="96" text-anchor="middle" font-size="19" fill="#5C6B7A">Multi-source footage becomes a temporal knowledge graph — and every answer plays back</text>
+
+  <!-- ══ WRITE PATH ═══════════════════════════════════════ -->
+  <text x="60" y="152" font-size="13" font-weight="700" fill="#2A8A85" letter-spacing="2.5">WRITE PATH — BUILD THE GRAPH</text>
+  <line x1="382" y1="147" x2="1380" y2="147" stroke="#DED7C6" stroke-width="1.5"/>
+
+  <!-- Card 1: Evidence in -->
+  <rect x="60" y="176" width="260" height="132" rx="14" fill="#FFFFFF" stroke="#16283C" stroke-width="2"/>
+  <circle cx="92" cy="208" r="15" fill="#16283C"/>
+  <text x="92" y="214" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">1</text>
+  <text x="118" y="214" font-size="17" font-weight="700" fill="#16283C">EVIDENCE IN</text>
+  <text x="84" y="248" font-size="16" fill="#16283C">Video · Audio · PDF</text>
+  <text x="84" y="274" font-size="13" fill="#5C6B7A">Upload a file, paste a URL, or</text>
+  <text x="84" y="292" font-size="13" fill="#5C6B7A">scrape a whole case page</text>
+
+  <line x1="332" y1="242" x2="386" y2="242" stroke="#16283C" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- Card 2: Index -->
+  <rect x="400" y="176" width="260" height="132" rx="14" fill="#FFFFFF" stroke="#16283C" stroke-width="2"/>
+  <circle cx="432" cy="208" r="15" fill="#16283C"/>
+  <text x="432" y="214" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">2</text>
+  <text x="458" y="214" font-size="17" font-weight="700" fill="#16283C">INDEX</text>
+  <text x="424" y="248" font-size="16" fill="#2A8A85" font-weight="600">TwelveLabs</text>
+  <text x="424" y="274" font-size="13" fill="#5C6B7A">Understands visuals, speech,</text>
+  <text x="424" y="292" font-size="13" fill="#5C6B7A">audio and on-screen text</text>
+
+  <line x1="672" y1="242" x2="726" y2="242" stroke="#16283C" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- Card 3: Extract -->
+  <rect x="740" y="176" width="260" height="132" rx="14" fill="#FFFFFF" stroke="#16283C" stroke-width="2"/>
+  <circle cx="772" cy="208" r="15" fill="#16283C"/>
+  <text x="772" y="214" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">3</text>
+  <text x="798" y="214" font-size="17" font-weight="700" fill="#16283C">EXTRACT</text>
+  <text x="764" y="248" font-size="16" fill="#2A8A85" font-weight="600">OpenAI</text>
+  <text x="764" y="274" font-size="13" fill="#5C6B7A">Structures the narrative into</text>
+  <text x="764" y="292" font-size="13" fill="#5C6B7A">typed, time-bounded entities</text>
+
+  <line x1="1012" y1="242" x2="1066" y2="242" stroke="#16283C" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- Card 4: Write -->
+  <rect x="1080" y="176" width="260" height="132" rx="14" fill="#2A8A85" stroke="#2A8A85" stroke-width="2"/>
+  <circle cx="1112" cy="208" r="15" fill="#FFFFFF"/>
+  <text x="1112" y="214" text-anchor="middle" font-size="16" font-weight="700" fill="#16283C">4</text>
+  <text x="1138" y="214" font-size="17" font-weight="700" fill="#FFFFFF">WRITE</text>
+  <text x="1104" y="248" font-size="16" fill="#FFFFFF" font-weight="600">Neo4j</text>
+  <text x="1104" y="274" font-size="13" fill="#D6EDEA">Nodes, relationships and the</text>
+  <text x="1104" y="292" font-size="13" fill="#D6EDEA">PRECEDES event timeline</text>
+
+  <!-- Down into the graph -->
+  <line x1="1210" y1="310" x2="1210" y2="352" stroke="#16283C" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- ══ THE GRAPH ════════════════════════════════════════ -->
+  <rect x="60" y="356" width="1320" height="278" rx="18" fill="#16283C"/>
+  <text x="92" y="394" font-size="13" font-weight="700" fill="#7FD1C9" letter-spacing="2.5">THE INCIDENT GRAPH</text>
+  <text x="330" y="394" font-size="13" fill="#8FA3B5">one graph per investigation — every node carries its source video and time bounds</text>
+
+  <!-- edges -->
+  <line x1="182" y1="510" x2="228" y2="510" stroke="#7FD1C9" stroke-width="1.8" marker-end="url(#arrowLight)"/>
+  <text x="205" y="500" text-anchor="middle" font-size="9.5" fill="#8FA3B5">HAS_VIDEO</text>
+
+  <line x1="332" y1="510" x2="378" y2="510" stroke="#7FD1C9" stroke-width="1.8" marker-end="url(#arrowLight)"/>
+  <text x="355" y="500" text-anchor="middle" font-size="9.5" fill="#8FA3B5">CONTAINS</text>
+
+  <path d="M 482 510 L 512 510 L 512 466 L 536 466" fill="none" stroke="#7FD1C9" stroke-width="1.8" marker-end="url(#arrowLight)"/>
+  <text x="512" y="500" text-anchor="middle" font-size="9.5" fill="#8FA3B5">CONTAINS</text>
+
+  <line x1="642" y1="466" x2="692" y2="466" stroke="#E0A030" stroke-width="2.2" marker-end="url(#arrowAmber)"/>
+  <text x="667" y="456" text-anchor="middle" font-size="9.5" font-weight="700" fill="#E0A030">PRECEDES</text>
+
+  <line x1="589" y1="490" x2="589" y2="546" stroke="#7FD1C9" stroke-width="1.8" marker-end="url(#arrowLight)"/>
+  <text x="545" y="524" text-anchor="middle" font-size="9.5" fill="#8FA3B5">INVOLVES</text>
+
+  <line x1="745" y1="490" x2="745" y2="546" stroke="#7FD1C9" stroke-width="1.8" marker-end="url(#arrowLight)"/>
+  <text x="789" y="524" text-anchor="middle" font-size="9.5" fill="#8FA3B5">INVOLVES</text>
+
+  <path d="M 798 466 L 838 466 L 838 510 L 862 510" fill="none" stroke="#7FD1C9" stroke-width="1.8" marker-end="url(#arrowLight)"/>
+  <text x="862" y="452" text-anchor="middle" font-size="9.5" fill="#8FA3B5">SUPPORTS /</text>
+  <text x="862" y="464" text-anchor="middle" font-size="9.5" fill="#8FA3B5">CONTRADICTS</text>
+
+  <line x1="968" y1="510" x2="1014" y2="510" stroke="#7FD1C9" stroke-width="1.8" marker-end="url(#arrowLight)"/>
+  <text x="991" y="500" text-anchor="middle" font-size="9.5" fill="#8FA3B5">STATED_IN</text>
+
+  <!-- nodes -->
+  <ellipse cx="122" cy="510" rx="60" ry="23" fill="#22384F" stroke="#7FD1C9" stroke-width="1.8"/>
+  <text x="122" y="515" text-anchor="middle" font-size="13" fill="#EAF4F3">Investigation</text>
+
+  <ellipse cx="282" cy="510" rx="50" ry="23" fill="#22384F" stroke="#7FD1C9" stroke-width="1.8"/>
+  <text x="282" y="515" text-anchor="middle" font-size="13" fill="#EAF4F3">Video</text>
+
+  <ellipse cx="432" cy="510" rx="50" ry="23" fill="#22384F" stroke="#7FD1C9" stroke-width="1.8"/>
+  <text x="432" y="515" text-anchor="middle" font-size="13" fill="#EAF4F3">Scene</text>
+
+  <ellipse cx="589" cy="466" rx="52" ry="23" fill="#2A8A85" stroke="#7FD1C9" stroke-width="1.8"/>
+  <text x="589" y="471" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">Event</text>
+
+  <ellipse cx="745" cy="466" rx="52" ry="23" fill="#2A8A85" stroke="#7FD1C9" stroke-width="1.8"/>
+  <text x="745" y="471" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">Event</text>
+
+  <ellipse cx="589" cy="568" rx="52" ry="23" fill="#22384F" stroke="#7FD1C9" stroke-width="1.8"/>
+  <text x="589" y="573" text-anchor="middle" font-size="13" fill="#EAF4F3">Person</text>
+
+  <ellipse cx="745" cy="568" rx="52" ry="23" fill="#22384F" stroke="#7FD1C9" stroke-width="1.8"/>
+  <text x="745" y="573" text-anchor="middle" font-size="13" fill="#EAF4F3">Object</text>
+
+  <ellipse cx="914" cy="510" rx="52" ry="23" fill="#22384F" stroke="#7FD1C9" stroke-width="1.8"/>
+  <text x="914" y="515" text-anchor="middle" font-size="13" fill="#EAF4F3">Claim</text>
+
+  <ellipse cx="1072" cy="510" rx="58" ry="23" fill="#22384F" stroke="#7FD1C9" stroke-width="1.8"/>
+  <text x="1072" y="515" text-anchor="middle" font-size="13" fill="#EAF4F3">Document</text>
+
+  <!-- graph legend -->
+  <rect x="1164" y="436" width="192" height="164" rx="10" fill="#1D3247"/>
+  <text x="1182" y="462" font-size="11" font-weight="700" fill="#7FD1C9" letter-spacing="1.5">READ IT AS</text>
+  <text x="1182" y="490" font-size="12" fill="#C7D5E1">A video breaks into scenes,</text>
+  <text x="1182" y="508" font-size="12" fill="#C7D5E1">scenes into events.</text>
+  <text x="1182" y="534" font-size="12" fill="#C7D5E1">Events are chained in time</text>
+  <text x="1182" y="552" font-size="12" fill="#C7D5E1">and tested against the</text>
+  <text x="1182" y="570" font-size="12" fill="#C7D5E1">claims people made.</text>
+
+  <!-- agent ↔ graph -->
+  <line x1="660" y1="636" x2="660" y2="700" stroke="#16283C" stroke-width="2.5" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <text x="676" y="662" font-size="12" fill="#5C6B7A">read-only Cypher, scoped to</text>
+  <text x="676" y="678" font-size="12" fill="#5C6B7A">the evidence you selected</text>
+
+  <!-- ══ READ PATH ════════════════════════════════════════ -->
+  <text x="60" y="726" font-size="13" font-weight="700" fill="#C98A1E" letter-spacing="2.5">READ PATH — ANSWER QUESTIONS</text>
+  <line x1="400" y1="721" x2="1380" y2="721" stroke="#DED7C6" stroke-width="1.5"/>
+
+  <!-- Card 5 -->
+  <rect x="60" y="748" width="290" height="146" rx="14" fill="#FFFFFF" stroke="#16283C" stroke-width="2"/>
+  <circle cx="92" cy="780" r="15" fill="#16283C"/>
+  <text x="92" y="786" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">5</text>
+  <text x="118" y="786" font-size="17" font-weight="700" fill="#16283C">ASK</text>
+  <text x="84" y="820" font-size="15" fill="#16283C">“Did anyone mention a weapon?”</text>
+  <text x="84" y="850" font-size="13" fill="#5C6B7A">Scoped to the videos and documents</text>
+  <text x="84" y="868" font-size="13" fill="#5C6B7A">you tick — or across whole cases</text>
+
+  <line x1="362" y1="820" x2="416" y2="820" stroke="#16283C" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- Card 6 -->
+  <rect x="430" y="748" width="460" height="146" rx="14" fill="#16283C" stroke="#16283C" stroke-width="2"/>
+  <circle cx="462" cy="780" r="15" fill="#FFFFFF"/>
+  <text x="462" y="786" text-anchor="middle" font-size="16" font-weight="700" fill="#16283C">6</text>
+  <text x="488" y="786" font-size="17" font-weight="700" fill="#FFFFFF">STRANDS AGENT</text>
+  <text x="700" y="786" font-size="12" fill="#8FA3B5">picks a tool per question</text>
+
+  <rect x="454" y="806" width="196" height="38" rx="19" fill="#22384F" stroke="#7FD1C9" stroke-width="1.5"/>
+  <text x="552" y="830" text-anchor="middle" font-size="13" fill="#EAF4F3">graph_query · Neo4j</text>
+
+  <rect x="666" y="806" width="204" height="38" rx="19" fill="#22384F" stroke="#7FD1C9" stroke-width="1.5"/>
+  <text x="768" y="830" text-anchor="middle" font-size="13" fill="#EAF4F3">video_search · TwelveLabs</text>
+
+  <text x="454" y="872" font-size="12" fill="#8FA3B5">Structured recall from the graph, or a fresh look at the raw footage</text>
+
+  <line x1="902" y1="820" x2="956" y2="820" stroke="#16283C" stroke-width="2.5" marker-end="url(#arrow)"/>
+
+  <!-- Card 7 -->
+  <rect x="970" y="748" width="370" height="146" rx="14" fill="#FFFFFF" stroke="#E0A030" stroke-width="2.5"/>
+  <circle cx="1002" cy="780" r="15" fill="#E0A030"/>
+  <text x="1002" y="786" text-anchor="middle" font-size="16" font-weight="700" fill="#FFFFFF">7</text>
+  <text x="1028" y="786" font-size="17" font-weight="700" fill="#16283C">ANSWER + EVIDENCE</text>
+  <text x="994" y="818" font-size="14" fill="#16283C">Every statement cites the moment it came from</text>
+
+  <rect x="994" y="832" width="86" height="30" rx="8" fill="#16283C"/>
+  <path d="M 1008 841 L 1018 847 L 1008 853 z" fill="#FFFFFF"/>
+  <text x="1046" y="852" text-anchor="middle" font-size="13" font-weight="600" fill="#FFFFFF">0:42</text>
+  <rect x="1092" y="832" width="112" height="30" rx="8" fill="#F3EADA" stroke="#E0A030" stroke-width="1.2"/>
+  <text x="1148" y="852" text-anchor="middle" font-size="12" fill="#8A5F10">Bodycam A</text>
+  <rect x="1216" y="832" width="106" height="30" rx="8" fill="#F3EADA" stroke="#E0A030" stroke-width="1.2"/>
+  <text x="1269" y="852" text-anchor="middle" font-size="12" fill="#8A5F10">Export clip</text>
+
+  <text x="994" y="882" font-size="12" fill="#5C6B7A">Click a citation to seek the player, or download just that range</text>
+</svg>
